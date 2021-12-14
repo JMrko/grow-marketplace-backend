@@ -8,53 +8,87 @@ class ScraperController extends Controller
     public function arcalauquen(Client $client){
 
         echo "FECHA : " . date("d/m/Y") . "<br>";
-        $papelHigienico = 'https://www.arcalauquen.cl/15-papel-higienico?page=1';
-        $toalla = 'https://www.arcalauquen.cl/16-toallas?page=1';
-        $jabon = 'https://www.arcalauquen.cl/8-detergentes-desinfectantes-y-jabones?page=1';
-        $servilleta = 'https://www.arcalauquen.cl/19-servilletas?page=1';
-        $panuelo = 'https://www.arcalauquen.cl/20-panuelos-desechables?page=1';
-        $sabanilla = 'https://www.arcalauquen.cl/17-sabanillas?page=1';
-        $panosLimpieza = 'https://www.arcalauquen.cl/18-panos-de-limpieza?page=1';
+        // $papelHigienico = 'https://www.arcalauquen.cl/15-papel-higienico?page=1';
+        // $toalla = 'https://www.arcalauquen.cl/16-toallas?page=1';
+        // $jabon = 'https://www.arcalauquen.cl/8-detergentes-desinfectantes-y-jabones?page=1';
+        // $servilleta = 'https://www.arcalauquen.cl/19-servilletas?page=1';
+        // $panuelo = 'https://www.arcalauquen.cl/20-panuelos-desechables?page=1';
+        // $sabanilla = 'https://www.arcalauquen.cl/17-sabanillas?page=1';
+        // $panosLimpieza = 'https://www.arcalauquen.cl/18-panos-de-limpieza?page=1';
+        $pagId = 1;
+        $categoriasLink = array(
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.arcalauquen.cl/15-papel-higienico?page=1'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.arcalauquen.cl/16-toallas?page=1'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.arcalauquen.cl/8-detergentes-desinfectantes-y-jabones?page=1'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.arcalauquen.cl/19-servilletas?page=1'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.arcalauquen.cl/20-panuelos-desechables?page=1'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.arcalauquen.cl/17-sabanillas?page=1'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.arcalauquen.cl/18-panos-de-limpieza?page=1'
+            ]
+            );
+            // dd($categoriasLink);
+        foreach ($categoriasLink as $categoriaLink) {    
+            $paginaURLPages = $categoriaLink->linkCategoriaProducto;
+            $crawler = $client->request('GET', $paginaURLPages);
+            $posicion = $crawler->filter(".page-list > li")->count()-2;
+            $numeroPaginas = $crawler->filter(".page-list > li")->eq($posicion)->text('1');
+            for($i=1; $i<=$numeroPaginas; ++$i)
+            {
+                $nuevaURLPage = explode('=', $paginaURLPages);
+                //OBTENGO LA URL DE LA PAGINA SIN EL NUMERO 1
+                $stringSeleccionado = $nuevaURLPage[0];
+                $paginaURL = "$stringSeleccionado=$i";
+                $crawler = $client->request('GET', $paginaURL);
+                $tituloCategoria = $crawler->filter("[class='h1 page-title']")->first()->text();
+                $pagina = $i;
+                echo 'PÁGINA '.$i. '<br>';
+                echo $tituloCategoria . '<br><br>';
 
-        // $paginaURLPages = "https://www.arcalauquen.cl/3-papeles?page=1";
-        $paginaURLPages = $panosLimpieza;
-        $crawler = $client->request('GET', $paginaURLPages);
-        $posicion = $crawler->filter(".page-list > li")->count()-2;
-        $numeroPaginas = $crawler->filter(".page-list > li")->eq($posicion)->text('1');
-        // dd($numeroPaginas);
-        for($i=1; $i<=$numeroPaginas; ++$i)
-        {
-            $paginaURL = "https://www.arcalauquen.cl/18-panos-de-limpieza?page=$i";
-            $crawler = $client->request('GET', $paginaURL);
-            $tituloCategoria = $crawler->filter("[class='h1 page-title']")->first();
-            echo 'PÁGINA '.$i. '<br>';
-            echo $tituloCategoria->text() . '<br><br>';
+                $crawler->filter(".js-product-miniature-wrapper")->each(function($node) use($pagina, $tituloCategoria, $pagId){
+                    $imagenProducto = $node->filter(".product-thumbnail > img")->attr('data-src');
+                    $nombreProducto = $node->filter("[class='h3 product-title']")->text();
+                    $precioProducto = $node->filter("[class='product-price-and-shipping']")->text();
+                    $urlProducto = $node->filter("[class='thumbnail product-thumbnail']")->attr('href');
+                    $descProducto = $node->filter(".product-description-short")->text();
+                    $stockProducto = $node->filter("[class='product-availability d-block']")->text();
+                    $skuProducto = $node->filter("[class='product-reference text-muted']")->text();
 
-            $crawler->filter(".js-product-miniature-wrapper")->each(function($node) use($client){
-                $imagenProducto = $node->filter(".product-thumbnail > img")->attr('data-src');
-                $nombreProducto = $node->filter("[class='h3 product-title']");
-                $precioProducto = $node->filter("[class='product-price-and-shipping']");
-                $urlProducto = $node->filter("[class='thumbnail product-thumbnail']")->attr('href');
-                $descProducto = $node->filter(".product-description-short");
-
-                // $crawler2 = $client->request('GET', $urlProducto);
-                // $crawler2->filter("[class='col-md-6 col-product-info']")->each(function($node){
-                //   echo 'STOCK: ' . $node->filter("#product-availability")->text() . '<br>';
-                // });
-                $stok = $node->filter("[class='product-availability d-block']")->text();
-                $skuProducto = $node->filter("[class='product-reference text-muted']")->text();
-                echo 'SKU Producto: '. $skuProducto . '<br>';
-                echo 'stock Producto: '. $stok . '<br>';
-                echo 'Nombre Producto: '. $nombreProducto->text() . '<br>';
-                echo 'Precio: '. $precioProducto->text() . '<br>';
-                echo 'Descripcion: '. $descProducto->text() . '<br>';
-                echo 'URL Producto: ';
-                var_dump($urlProducto);
-                echo  '<br>';
-                echo 'Imagen: ';
-                var_dump($imagenProducto);
-                echo '<br><br>';
-            });
+                    echo 'Página ID: ' .$pagId.'<br>';
+                    echo 'Página: ' .$pagina.'<br>';
+                    echo 'Titulo Categoria: ' .$tituloCategoria.'<br>';
+                    echo 'SKU Producto: '. $skuProducto . '<br>';
+                    echo 'stock Producto: '. $stockProducto . '<br>';
+                    echo 'Nombre Producto: '. $nombreProducto. '<br>';
+                    echo 'Precio: '. $precioProducto . '<br>';
+                    echo 'Descripcion: '. $descProducto . '<br>';
+                    echo 'URL Producto: ';
+                    var_dump($urlProducto);
+                    echo  '<br>';
+                    echo 'Imagen: ';
+                    var_dump($imagenProducto);
+                    echo '<br><br>';
+                });
+            }
         }
     }
 
@@ -68,7 +102,7 @@ class ScraperController extends Controller
             $jabon = 'https://torkalpormayor.cl/collections/jabon';
             $servilleta = 'https://torkalpormayor.cl/collections/insumos/servilletas';
             $sabanillaMedica = 'https://torkalpormayor.cl/collections/sabanilla-medica';
-            // $paginaURL = "https://torkalpormayor.cl/collections/insumos/toalla";
+
             $paginaURL = $sabanillaMedica;
             $crawler = $client->request('GET', $paginaURL);
 
@@ -77,9 +111,7 @@ class ScraperController extends Controller
                 $nombreProducto = $node->filter("[class='h5--accent strong name_wrapper']");
                 $precioProducto = $node->filter("[class='money']");
                 $urlProducto = $node->filter(".lazy-image")->attr('href');
-                // $netoProducto = $node->filter(".price > span")->eq(2);
-                
-                // echo 'Neto Producto: '. $netoProducto->text() . '<br>';
+
                 echo 'Nombre Producto: '. $nombreProducto->text() . '<br>';
                 echo 'Precio: '. $precioProducto->text() . '<br>';
                 echo 'URL Producto: ';
@@ -89,50 +121,41 @@ class ScraperController extends Controller
                 var_dump($imagenProducto);
                 echo '<br><br>';
             });
-
-            // $crawler->filter("[class='grid__item  small--one-half medium--one-half large--one-third on-sale tagged product-grid-item']")->each(function($node){
-            //     $imagenProducto = $node->filter(".lazy-image > img")->attr('data-src');
-            //     $nombreProducto = $node->filter("[class='h5--accent strong name_wrapper']");
-            //     $precioProducto = $node->filter("[class='money']");
-            //     $urlProducto = $node->filter(".lazy-image")->attr('href');
-                
-            //     echo 'Nombre Producto: '. $nombreProducto->text() . '<br>';
-            //     echo 'Precio: '. $precioProducto->text() . '<br>';
-            //     echo 'URL Producto: ';
-            //     var_dump($urlProducto);
-            //     echo  '<br>';
-            //     echo 'Imagen: ';
-            //     var_dump($imagenProducto);
-            //     echo '<br><br>';
-            // });
-            
-            // $crawler->filter("[class='grid__item  small--one-half medium--one-half large--one-third tagged product-grid-item']")->each(function($node){
-            //     $imagenProducto = $node->filter(".lazy-image > img")->attr('data-src');
-            //     $nombreProducto = $node->filter("[class='h5--accent strong name_wrapper']");
-            //     $precioProducto = $node->filter("[class='money']");
-            //     $urlProducto = $node->filter(".lazy-image")->attr('href');
-                
-            //     echo 'Nombre Producto: '. $nombreProducto->text() . '<br>';
-            //     echo 'Precio: '. $precioProducto->text() . '<br>';
-            //     echo 'URL Producto: ';
-            //     var_dump($urlProducto);
-            //     echo  '<br>';
-            //     echo 'Imagen: ';
-            //     var_dump($imagenProducto);
-            //     echo '<br><br>';
-            // });
     }
 
     public function dipisa(Client $client){
 
         echo "FECHA : " . date("d/m/Y") . "<br>";
+        $categoriasLink = array(
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://dipisa.cl/tipo_tissues/papel-higienico/',
+                'categoria'             => 'Papel Higienico'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://dipisa.cl/tipo_tissues/toallas-de-papel/',
+                'categoria'             => 'Toallas de Papel'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://dipisa.cl/tipo_tissues/dispensador/',
+                'categoria'             => 'Dispensador'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://dipisa.cl/tipo_tissues/sabanilla/',
+                'categoria'             => 'Sabanilla'
+            ],
+        );
 
-            $papelHigienico = 'https://dipisa.cl/tipo_tissues/papel-higienico/';
-            $toallasPapel = 'https://dipisa.cl/tipo_tissues/toallas-de-papel/';
-            $dispensador = 'https://dipisa.cl/tipo_tissues/dispensador/';
-            $sabanilla = 'https://dipisa.cl/tipo_tissues/sabanilla/';
-            // $paginaURL = "https://dipisa.cl/tipo_tissues/papel-higienico/";
-            $paginaURL = $sabanilla;
+        foreach ($categoriasLink as $categoriaLink) {
+            // $papelHigienico = 'https://dipisa.cl/tipo_tissues/papel-higienico/';
+            // $toallasPapel = 'https://dipisa.cl/tipo_tissues/toallas-de-papel/';
+            // $dispensador = 'https://dipisa.cl/tipo_tissues/dispensador/';
+            // $sabanilla = 'https://dipisa.cl/tipo_tissues/sabanilla/';
+
+            $paginaURL = $categoriaLink->linkCategoriaProducto;
             $crawler = $client->request('GET', $paginaURL);
             $tituloCategoria = $crawler->filter("[class='col-md-12 text-center']")->first();
             echo $tituloCategoria->text() . '<br><br>';
@@ -156,7 +179,7 @@ class ScraperController extends Controller
                 var_dump($imagenProducto);
                 echo '<br><br>';
             });
-     
+        }
     }
 
     public function avalco(Client $client){
@@ -178,7 +201,6 @@ class ScraperController extends Controller
         $desengrasante = 'https://www.avalco.cl/40-desengrasantes?page=1';
 
         $paginaURLPages = $desengrasante;
-        // $paginaURLPages = "https://avalco.cl/131-alcohol-etilico?page=1";
         $crawler = $client->request('GET', $paginaURLPages);
         $posicion = $crawler->filter(".page-list > li")->count()-2;
         $numeroPaginas = $crawler->filter(".page-list > li")->eq($posicion)->text('1');
@@ -223,9 +245,26 @@ class ScraperController extends Controller
         $papelHigienico = 'https://dilenchile.cl/categoria-producto/papel-higienico/';
         $toallaPapel = 'https://dilenchile.cl/categoria-producto/toalla-de-papel/';
         $jabon = 'https://dilenchile.cl/categoria-producto/jabones/';
+        $dispensadorPHBajoMetraje= 'https://dilenchile.cl/categoria-producto/papel-higienico/dispensador-papel-higienico-bajo-metraje/';
+        $dispensadorPHBajoMetrajeInterfoliado = 'https://dilenchile.cl/categoria-producto/papel-higienico/dispensador-papel-higienico-bajo-metraje-interfoliado/';
+        $dispensadorPHAltoMetraje = 'https://dilenchile.cl/categoria-producto/papel-higienico/dispensador-papel-higienico-alto-metraje/';
+        $dispensadorServilletaExpress = 'https://dilenchile.cl/categoria-producto/servilleta/dispensador-servilleta-express/';
+        $dispensadorServilletaMesa = 'https://dilenchile.cl/categoria-producto/servilleta/dispensador-servilleta-mesa/';
+        $dispensadorSabanilla = 'https://dilenchile.cl/categoria-producto/sabanillas/dispensador-sabanillas/';
+        $dispensadorCobertorWC = 'https://dilenchile.cl/categoria-producto/accesorios-de-bano/cobertor-w-c/dispensador-cobertor-w-c/';
+        $dispensadorJabonRellenable = 'https://dilenchile.cl/categoria-producto/jabones/jabon-rellenable/dispensador-jabon-rellenable/';
+        $dispensadorJabonMultiflex = 'https://dilenchile.cl/categoria-producto/jabones/jabon-multiflex/dispensador-jabon-multiflex/';
+        $dispensadorPanosLimpieza = 'https://dilenchile.cl/categoria-producto/panos-de-limpieza/dispensador-panos-de-limpieza/';
+        $servilleta = 'https://dilenchile.cl/categoria-producto/servilleta/';
+        $sabanilla = 'https://dilenchile.cl/categoria-producto/sabanillas/';
+        $panialAdulto = 'https://dilenchile.cl/categoria-producto/panal-para-adultos/';
+        $paniosLimpieza = 'https://dilenchile.cl/categoria-producto/panos-de-limpieza/';
+        $alcoholGel  = 'https://dilenchile.cl/categoria-producto/higiene-y-cuidados/alcohol-gel/';
+        $lavaloza = 'https://dilenchile.cl/categoria-producto/productos-de-limpieza/lavalozas/';
+        $limpiaVidrios = 'https://dilenchile.cl/categoria-producto/productos-de-limpieza/limpiavidrios/';
+        $desengrasante = 'https://dilenchile.cl/categoria-producto/productos-de-limpieza/desengrasante/';
 
-            $paginaURL = $jabon;
-            // $paginaURL = "https://dilenchile.cl/categoria-producto/papel-higienico/";
+            $paginaURL = $desengrasante;
             $crawler = $client->request('GET', $paginaURL);
             $tituloCategoria = $crawler->filter(".title");
             echo $tituloCategoria->text() . '<br><br>';
@@ -251,16 +290,92 @@ class ScraperController extends Controller
 
         echo "FECHA : " . date("d/m/Y") . "<br>";
         
-        $paginaURLPages = "https://www.sodimac.cl/sodimac-cl/category/cat4850182/papeles-y-dispensadores/";
+        $papelHigienico = 'https://www.sodimac.cl/sodimac-cl/category/cat4830002/Papeles?currentpage=1&=&f.product.attribute.Tipo=papel%2520higienico';
+        $papelToalla = 'https://www.sodimac.cl/sodimac-cl/category/cat4830002/Papeles?currentpage=1&=&f.product.attribute.Tipo=toalla';
+        $servilleta = 'https://www.sodimac.cl/sodimac-cl/search?Ntt=servilleta&currentpage=1';//se redirecciona porque solo hay un producto
+        $dispensadorJabon = 'https://www.sodimac.cl/sodimac-cl/category/cat4850181?currentpage=1&=&f.product.attribute.Tipo=dispensadores%2520de%2520jabon';
+        $dispensadorServilleta = 'https://www.sodimac.cl/sodimac-cl/search?Ntt=dispensador%20de%20servilleta?currentpage=1';
+        $dispensadorPapelHigienico = 'https://www.sodimac.cl/sodimac-cl/category/scat963514/Limpieza?Ntt=dispensadores&sTerm=dispensadores&sType=category&sScenario=BTP_CAT_dispensadores&currentpage=1&f.product.attribute.Tipo=dispensador%2520papel%2520higienico';
+        $jabon = 'https://www.sodimac.cl/sodimac-cl/category/scat963514/Limpieza?Ntt=jabones%20alcohol&sTerm=jabones&sType=category&sScenario=BTP_CAT_jabones%20alcohol&currentpage=1&f.product.attribute.Tipo=jabon';
+        $sabanilla = 'https://www.sodimac.cl/sodimac-cl/category/cat9230001/Insumos-Medicos?currentpage=1';
+        $alcohol = 'https://www.sodimac.cl/sodimac-cl/category/cat11540001/Proteccion-Sanitaria?currentpage=1&=&f.product.attribute.Tipo=alcohol%3A%3Aalcohol%2520gel';
+        $lavaloza = 'https://www.sodimac.cl/sodimac-cl/category/cat4850292/Limpiadores-de-cocina?currentpage=1&=&f.product.attribute.Tipo=lavalozas';
+        $limpiaVidrios = 'https://www.sodimac.cl/sodimac-cl/category/cat4850294/Limpiadores-Especificos?currentpage=1&=&f.product.attribute.Tipo=limpiavidrios';
+        $desengrasante = 'https://www.sodimac.cl/sodimac-cl/search?Ntt=desengrasantes&currentpage=1&f.product.attribute.Tipo=desengrasante';
+
+        $categoriasLink = array(
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/cat4830002/Papeles?currentpage=1&=&f.product.attribute.Tipo=papel%2520higienico',
+                'categoria'             => 'Papel Higienico'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/cat4830002/Papeles?currentpage=1&=&f.product.attribute.Tipo=toalla',
+                'categoria'             => 'Toalla de Papel'
+            ],
+            // (object)
+            // [
+            //     'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/cat4830002/Papeles?currentpage=1&=&f.product.attribute.Tipo=servilleta',
+            //     'categoria'             => 'Servilleta'
+            // ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/cat4850181?currentpage=1&=&f.product.attribute.Tipo=dispensadores%2520de%2520jabon',
+                'categoria'             => 'Dispensador de Jabon'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/search?Ntt=dispensador%20de%20servilleta',
+                'categoria'             => 'Dispensador de Servilletas'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/scat963514/Limpieza?Ntt=dispensadores&sTerm=dispensadores&sType=category&sScenario=BTP_CAT_dispensadores&currentpage=1&f.product.attribute.Tipo=dispensador%2520papel%2520higienico',
+                'categoria'             => 'Dispensador de Papel Higienico'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/scat963514/Limpieza?Ntt=jabones%20alcohol&sTerm=jabones&sType=category&sScenario=BTP_CAT_jabones%20alcohol&currentpage=1&f.product.attribute.Tipo=jabon',
+                'categoria'             => 'Jabon'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/cat9230001/Insumos-Medicos?currentpage=1',
+                'categoria'             => 'Sabanillas'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/cat11540001/Proteccion-Sanitaria?currentpage=1&=&f.product.attribute.Tipo=alcohol%3A%3Aalcohol%2520gel',
+                'categoria'             => 'Alcohol Gel'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/cat4850292/Limpiadores-de-cocina?currentpage=1&=&f.product.attribute.Tipo=lavalozas',
+                'categoria'             => 'Lavalozas'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/cat4850294/Limpiadores-Especificos?currentpage=1&=&f.product.attribute.Tipo=limpiavidrios',
+                'categoria'             => 'Limpiavidrios'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/search?Ntt=desengrasantes&currentpage=1&f.product.attribute.Tipo=desengrasante',
+                'categoria'             => 'Desengrasantes'
+            ],
+        );
+
+        $paginaURLPages = $servilleta;
         $crawler = $client->request('GET', $paginaURLPages);
-        $numeroPaginas = $crawler->filter("[class='jsx-4278284191 page-item page-index ']")->last()->text();
+        $numeroPaginas = $crawler->filter("[class='jsx-4278284191 page-item page-index ']")->last()->text('1');
 
         for($i=1; $i<=$numeroPaginas; ++$i)
         {
-            $paginaURL = "https://www.sodimac.cl/sodimac-cl/category/cat4850182/papeles-y-dispensadores?currentpage=$i";
+            $paginaURL = "https://www.sodimac.cl/sodimac-cl/search?Ntt=servilleta&currentpage=$i";
             $crawler = $client->request('GET', $paginaURL);
             $tituloCategoria = $crawler->filter("[class='jsx-245626150 category-title']");
-            echo $tituloCategoria->text() . '<br><br>';
+            echo $tituloCategoria->text('Desengrasantes') . '<br><br>';
 
             $crawler->filter("[class='jsx-411745769 product ie11-product-container']")->each(function($node){
                 $imagenProducto = $node->filter("[class='image-contain ie11-image-contain  __lazy']")->attr('data-src');
@@ -284,12 +399,21 @@ class ScraperController extends Controller
     public function dpronto(Client $client){
         echo "FECHA : " . date("d/m/Y") . "<br>";
        
-        $paginaURL = "https://www.dpronto.cl/product-category/productos-de-limpieza/";
+        $dispensadorJabon = 'https://www.dpronto.cl/product-category/dispensadores-de-jabon/';
+        $dispensadorPapelHigienico = 'https://www.dpronto.cl/product-category/dispensadores-de-jabon-papel-hig-toalla/';
+        $jabon = 'https://www.dpronto.cl/product-category/productos-de-limpieza/jabones/';
+        $papelHigienico = 'https://www.dpronto.cl/product-category/productos-de-limpieza/papeles-higienicos/';
+        $toallaServilleta = 'https://www.dpronto.cl/product-category/productos-de-limpieza/toallas-de-papel-y-servilletas/';
+        $lavalozasDesengrasante = 'https://www.dpronto.cl/product-category/productos-de-limpieza/lavalozas-y-desengrasantes/';
+        $limpiavidrios = 'https://www.dpronto.cl/product-category/productos-de-limpieza/limpiavidrios/';
+        $alcohol = 'https://www.dpronto.cl/product-category/productos-de-limpieza/desinfectantes-sanitizantes-enzimaticos/';
+
+        $paginaURL = $alcohol;
         $crawler = $client->request('GET', $paginaURL);
         $stringtituloCategoria = $crawler->filter("[class='woocommerce-breadcrumb breadcrumbs uppercase']")->text();
         $tituloCategoria = explode('/',$stringtituloCategoria);
         echo $tituloCategoria[1] . '<br><br>';
-        //box-text box-text-products text-center grid-style-2
+
         $crawler->filter("[class='product-small box ']")->each(function($node){
             $imagenProducto = $node->filter(".image-zoom > a > img")->attr('data-src');
             $nombreProducto = $node->filter("[class='woocommerce-LoopProduct-link woocommerce-loop-product__link']")->text();
@@ -304,45 +428,23 @@ class ScraperController extends Controller
                 var_dump($imagenProducto);
                 echo '<br><br>';
         });
-
-            
-        // $paginaURLPages = "https://www.dpronto.cl/index.php?route=product/category&path=83_71";
-        // $crawler = $client->request('GET', $paginaURLPages);
-        // $posicion = $crawler->filter(".pagination > li")->count()-3;
-        // $numeroPaginas = $crawler->filter(".pagination > li")->eq($posicion)->text();
-
-        // for($i=1; $i<=$numeroPaginas; ++$i)
-        // {
-        //     $paginaURL = "https://www.dpronto.cl/index.php?route=product/category&path=83_71&page=$i";
-        //     $crawler = $client->request('GET', $paginaURL);
-        //     $tituloCategoria = $crawler->filter("#content > h1");
-        //     echo 'PÁGINA '.$i. '<br>';
-        //     echo $tituloCategoria->text() . '<br><br>';
-
-        //     $crawler->filter("[class='product-thumb']")->each(function($node){
-        //         $imagenProducto = $node->filter(".img-responsive")->attr('src');
-        //         $nombreProducto = $node->filter(".caption > h4");
-        //         $urlProducto = $node->filter(".image > a")->attr('href');
-        //         $precioProducto = $node->filter(".price");
-        //         echo 'Nombre Producto: '. $nombreProducto->text() . '<br>';
-        //         echo 'Precio Producto: ' . $precioProducto->text() . '<br>';
-        //         echo 'URL Producto: ';
-        //         var_dump($urlProducto);
-        //         echo  '<br>';
-        //         echo 'Imagen: ';
-        //         var_dump($imagenProducto);
-        //         echo '<br><br>';
-        //     });
-        // }
-
-
     }
 
     public function comcer(Client $client){
 
         echo "FECHA : " . date("d/m/Y") . "<br>";
 
-            $paginaURL = "https://www.comcer.cl/store/categoria-producto/dispensadores/";
+        $papelHigienico = 'https://www.comcer.cl/store/categoria-producto/papeles/papeles-higienicos-formato-hogar-y-jumbo/';
+        $toallaPapel = 'https://www.comcer.cl/store/categoria-producto/papeles/toalla-de-papel/';
+        $sabanilla = 'https://www.comcer.cl/store/categoria-producto/papeles/sabanillas/';
+        $servilleta = 'https://www.comcer.cl/store/categoria-producto/papeles/servilletas/';
+        $dispensador = 'https://www.comcer.cl/store/categoria-producto/dispensadores/';
+        $jabonGel = 'https://www.comcer.cl/store/categoria-producto/jabones/';
+        $panos = 'https://www.comcer.cl/store/categoria-producto/panos/';
+        $alcoholJabonGel = 'https://www.comcer.cl/store/categoria-producto/proteccion-covid-19/jabon-y-alcohol-gel/';
+        $lavalozaDesengrasante = 'https://www.comcer.cl/store/categoria-producto/detergentes/lavalozas/';
+
+            $paginaURL = $lavalozaDesengrasante;
             $crawler = $client->request('GET', $paginaURL);
             $tituloCategoria = $crawler->filter("[class='woocommerce-products-header__title page-title']");
             echo $tituloCategoria->text() . '<br><br>';
@@ -367,13 +469,29 @@ class ScraperController extends Controller
 
         echo "FECHA : " . date("d/m/Y") . "<br>";
 
-        $paginaURLPages = "https://www.ofimaster.cl/papel-tissue?page=1";
+        $papelHigienico = 'https://www.ofimaster.cl/papel-tissue/papel-higienico?page=1';
+        $toallaPapel = 'https://www.ofimaster.cl/papel-tissue/toalla-de-papel?page=1';
+        $jabon = 'https://www.ofimaster.cl/quimicos-de-limpieza/jabones?page=1';
+        $dispensadorAromas = 'https://www.ofimaster.cl/dispensadores/de-aromas?page=1';
+        $dispensadorJabon = 'https://www.ofimaster.cl/dispensadores/de-jabon?page=1';
+        $dispensadorPapelHigienico = 'https://www.ofimaster.cl/dispensadores/de-papel-higiienico?page=1';
+        $dispensadorToalla = 'https://www.ofimaster.cl/dispensadores/de-toalla-de-papel?page=1';
+        $servilleta = 'https://www.ofimaster.cl/papel-tissue/servilletas?page=1';
+        $sabanilla = 'https://www.ofimaster.cl/search?q=sabanilla&page=1';
+        $paño = 'https://www.ofimaster.cl/search?q=pa%C3%B1o&page=1';
+        $panuelo = 'https://www.ofimaster.cl/search?q=pa%C3%B1uelo%7D&page=1';
+        $alcohol = 'https://www.ofimaster.cl/search?q=alcohol&page=1';
+        $lavaloza = 'https://www.ofimaster.cl/search?q=lavaloza&page=1';
+        $limpiavidrio = 'https://www.ofimaster.cl/search?q=limpiavidrio&page=1';
+        $desengrasante = 'https://www.ofimaster.cl/search?q=desengrasante&page=1';
+
+        $paginaURLPages = $sabanilla;
         $crawler = $client->request('GET', $paginaURLPages);
-        $numeroPaginas = $crawler->filter('.count > span')->last()->text();
+        $numeroPaginas = $crawler->filter('.count > span')->last()->text('1');
 
         for($i=1; $i<=$numeroPaginas; ++$i){
 
-            $paginaURL = "https://www.ofimaster.cl/papel-tissue?page=$i";
+            $paginaURL = "https://www.ofimaster.cl/search?q=sabanilla&page=$i";
             $crawler = $client->request('GET', $paginaURL);
             $tituloCategoria = $crawler->filter(".page-title");
             echo 'PÁGINA '.$i. '<br>';
@@ -386,7 +504,7 @@ class ScraperController extends Controller
                 $urlProducto = $node->filter(".product-block > a")->attr('href');
                 $precioProducto = $node->filter("[class='block-price']");
                 echo 'Nombre Producto: '. $nombreProducto->text() . '<br>';
-                echo 'Marca Producto: '. $marcaProducto->text() . '<br>';
+                echo 'Marca Producto: '. $marcaProducto->text('-') . '<br>';
                 echo 'Precio Producto: ' . $precioProducto->text() . '<br>';
                 echo 'URL Producto: ';
                 var_dump($urlProducto);
@@ -402,17 +520,26 @@ class ScraperController extends Controller
 
         echo "FECHA : " . date("d/m/Y") . "<br>";
 
-        $paginaURLPages = "https://daos.cl/home/3-aseo-y-limpieza";
+        $papelHigienico = 'https://daos.cl/home/15-papel-higienico';
+        $toallaPapel = 'https://daos.cl/home/17-toalla-de-papel';
+        $lavaloza = 'https://daos.cl/home/21-lavalozas';
+        $jabonLiquido = 'https://daos.cl/home/70-jabon-liquido';
+        $jabonBarra = 'https://daos.cl/home/71-jabon-en-barra';
+        $desengrasante = 'https://daos.cl/home/22-antigrasa';
+        $limpividrio = 'https://daos.cl/home/27-limpiadores';
+        $alcoholGel = 'https://daos.cl/home/101-alcohol-gel';
+
+        $paginaURLPages = $desengrasante;
         $crawler = $client->request('GET', $paginaURLPages);
-        $numeroPaginas = $crawler->filter(".page-list > li")->eq(4)->text();
+        $numeroPaginas = $crawler->filter(".page-list > li")->eq(4)->text('1');
         
         for($i=1; $i<=$numeroPaginas; ++$i){
-            $paginaURL = "https://daos.cl/home/3-aseo-y-limpieza?page=$i";
+            $paginaURL = "https://daos.cl/home/22-antigrasa?page=$i";
             $crawler = $client->request('GET', $paginaURL);
             $tituloCategoria = $crawler->filter(".h2");
             echo 'PÁGINA '.$i. '<br>';
             echo $tituloCategoria->text() . '<br><br>';
-            
+           // 
             $crawler->filter("[class='thumbnail-container']")->each(function($node){
                 $imagenProducto = $node->filter("[class='ttproduct-img1']")->attr('src');
                 $nombreProducto = $node->filter("[class='h3 product-title']");
@@ -434,12 +561,25 @@ class ScraperController extends Controller
 
         echo "FECHA : " . date("d/m/Y") . "<br>";
 
-        $paginaURLPages = "https://provit.cl/lineas/2/papeles";
+        $papelHigienico = 'https://provit.cl/categorias/10/papel-higienico/9999/0/0/9999/0/9/pagina-1';
+        $toallaEnRollo = 'https://provit.cl/categorias/12/tollas-en-rollo/9999/0/0/9999/0/9/pagina-1';
+        $toallaInterfoleada = 'https://provit.cl/categorias/13/toallas-interfoliadas/9999/0/0/9999/0/9/pagina-1';
+        $sabanilla = 'https://provit.cl/categorias/14/sabanillas/9999/0/0/9999/0/9/pagina-1';
+        $jabon = 'https://provit.cl/categorias/1/jabon/9999/0/0/9999/0/9/pagina-1';
+        $dispensador = 'https://provit.cl/lineas/1/dispensadores/9999/0/0/9999/0/9/pagina-1';
+        $servilleta = 'https://provit.cl/categorias/11/servilletas/9999/0/0/9999/0/9/pagina-1';
+        $panos = 'https://provit.cl/categorias/3/panos/9999/0/0/9999/0/9/pagina-1';
+        $alcohol = 'https://provit.cl/busquedas/alcohol/9999/0/0/9999/0/9/pagina-1';
+        $lavaloza = 'https://provit.cl/busquedas/lavaloza/9999/0/0/9999/0/9/pagina-1';
+        $limpiavidrio = 'https://provit.cl/busquedas/limpiavidrio/9999/0/0/9999/0/9/pagina-1';
+        $desengrasante = 'https://provit.cl/busquedas/desengrasante/9999/0/0/9999/0/9/pagina-1';
+
+        $paginaURLPages = $desengrasante;
         $crawler = $client->request('GET', $paginaURLPages);
         $numeroPaginas = $crawler->filter(".paginate")->last()->text();
 
         for($i=1; $i<=$numeroPaginas; ++$i){
-            $paginaURL = "https://provit.cl/lineas/2/papeles/9999/0/0/9999/0/9/pagina-$i";
+            $paginaURL = "https://provit.cl/busquedas/desengrasante/9999/0/0/9999/0/9/pagina-$i";
             $crawler = $client->request('GET', $paginaURL);
             $tituloStringCategoria = $crawler->filter(".nomCategoria")->text();
             $tituloCategoria = explode ("(", $tituloStringCategoria);
@@ -467,7 +607,16 @@ class ScraperController extends Controller
 
         echo "FECHA : " . date("d/m/Y") . "<br>";
 
-            $paginaURL = "https://limpiamas.mercadoshops.cl/hogar/";
+        $papelHigienico = 'https://limpiamas.mercadoshops.cl/papel-higienico';
+        $toallaPapel = 'https://limpiamas.mercadoshops.cl/toalla';
+        $jabon = 'https://limpiamas.mercadoshops.cl/jabon';
+        $dispensador = 'https://limpiamas.mercadoshops.cl/dispensador';
+        $servilleta = 'https://limpiamas.mercadoshops.cl/servilleta';
+        $sabanilla = 'https://limpiamas.mercadoshops.cl/sabanilla';
+        $panal = 'https://limpiamas.mercadoshops.cl/pañal';
+        $alcohol = 'https://limpiamas.mercadoshops.cl/alcohol';
+
+            $paginaURL = $alcohol;
             $crawler = $client->request('GET', $paginaURL);
             $tituloCategoria = $crawler->filter(".ui-search-breadcrumb__title");
             echo $tituloCategoria->text() . '<br><br>';
@@ -492,10 +641,32 @@ class ScraperController extends Controller
         
         echo "FECHA : " . date("d/m/Y") . "<br>";
 
-        $paginaURL = "https://www.hygiene.cl/categoria-producto/higenicos/";
+        $papelHigienico = 'https://www.hygiene.cl/categoria-producto/higenicos/';
+        $toallaDoblada = 'https://www.hygiene.cl/categoria-producto/toallas/dobladas/';
+        $toallaRollo = 'https://www.hygiene.cl/categoria-producto/toallas/toallas-rollo/';
+        $toallaWipe = 'https://www.hygiene.cl/categoria-producto/toallas/wipe/';
+        $jabon = 'https://www.hygiene.cl/categoria-producto/jabones/';
+        $sabanilla = 'https://www.hygiene.cl/categoria-producto/otros-papeles/sabanillas-medicas/';
+        $desengrasante = 'https://www.hygiene.cl/categoria-producto/desengrasantes/';
+        $panos = 'https://www.hygiene.cl/categoria-producto/accesorios-superficies/panos/';
+        $panuelos = 'https://www.hygiene.cl/categoria-producto/otros-papeles/panuelos-faciales/';
+        $servilletaGourmet = 'https://www.hygiene.cl/categoria-producto/servilletas-gourmet/';
+        $servilletaMesa = 'https://www.hygiene.cl/categoria-producto/alimentaria/servilletas/servilletas-mesa/';
+        $servilletaInterfoliada = 'https://www.hygiene.cl/categoria-producto/alimentaria/servilletas/servilletas-interfoliadas/';
+        $servilletaCoctel ='https://www.hygiene.cl/categoria-producto/alimentaria/servilletas/servilleta-coctel/';
+        $servilletaLunch = 'https://www.hygiene.cl/categoria-producto/alimentaria/servilletas/servilletas-lunch/';
+        $dispensadorServilleta = 'https://www.hygiene.cl/categoria-producto/alimentaria/servilletas/dispensadores-servilletas/';
+        $dispensadorHigienico = 'https://www.hygiene.cl/categoria-producto/higenicos/dispensadores-higienicos/';
+        $dispensadorJabones = 'https://www.hygiene.cl/categoria-producto/jabones/dispensadores-jabones/';
+        $dispensadorToalla = 'https://www.hygiene.cl/categoria-producto/toallas/dispensadores-toallas/';
+        $panal = 'https://www.hygiene.cl/categoria-producto/incontinencia/incontinencia-hombres/';
+        $alcohol = 'https://www.hygiene.cl/categoria-producto/elementos-proteccion-personal/proteccion-piel/';
+        $lavaloza = 'https://www.hygiene.cl/categoria-producto/alimentaria/lavalozas/';
+
+        $paginaURL = $lavaloza;
         $crawler = $client->request('GET', $paginaURL);
         $tituloCategoria = $crawler->filter(".page-title");
-        echo $tituloCategoria->text() . '<br>';
+        echo $tituloCategoria->text('-') . '<br>';
         echo '<br>';
 
         $crawler->filter(".classic")->each(function($node){
@@ -525,9 +696,54 @@ class ScraperController extends Controller
                             ->body($queryCategoriasJson)
                             ->send();
        $store = $datosCategorias->body->data->getStore->id;
-       $categorias = $datosCategorias->body->data->getStore->categories;    
-
-        foreach ($categorias as $categoria) {
+    //    $categorias = $datosCategorias->body->data->getStore->categories; 
+    //    dd($categorias);   
+        //63526 Limpieza Y Aseo
+        //63485 Cuidado e Higiene Personal
+        //63542 Mundo Bebé
+        $categoriasRequeridas = array(
+            (object)
+            [ 
+                'id' => '63489',
+                'name' => 'Jabones'
+            ],
+            (object)
+            [
+                'id' => '63531',
+                'name' => 'Toallas de Papel'
+            ],
+            (object)
+            [
+                'id' => '63530',
+                'name' => 'Servilletas'
+            ],
+            (object)
+            [
+                'id' => '63529',
+                'name' => 'Papel Higiénico'
+            ],
+            (object)
+            [
+                'id' => '63545',
+                'name' => 'Pañales Bebe'
+            ],
+            (object)
+            [
+                'id' => '63494',
+                'name' => 'Pañales Adulto'
+            ],
+            (object)
+            [
+                'id' => '63534',
+                'name' => 'Limpiadores Hogar'
+            ],
+            (object)
+            [
+                'id' => '63533',
+                'name' => 'Wipes / Accesorios Aseo'
+            ],
+        );
+        foreach ($categoriasRequeridas as $categoria) {
             $id = $categoria->id;
             echo 'Categoria: '. $categoria->name . '<br><br>';
 
@@ -537,6 +753,8 @@ class ScraperController extends Controller
                                     ->sendsJson()
                                     ->body($queryProductosObtenerPaginasJson)
                                     ->send();
+            // dd($datosProductos1);
+            
             $paginas =$datosProductos1->body->data->getProducts->paginator->pages;
 
             for($i=1; $i<=$paginas;$i++)
@@ -569,15 +787,50 @@ class ScraperController extends Controller
     public function cuponatic(){
         
         echo "FECHA : " . date("d/m/Y") . "<br><br>";
-        $categorias = array('panoramas','productos','viajes-y-turismo','belleza','servicios','gastronomia','bienestar-y-salud');
+        // $categorias = array('panoramas','productos','viajes-y-turismo','belleza','servicios','gastronomia','bienestar-y-salud');
+        $categorias = array('productos');
         foreach ($categorias as $categoria) {
             $urlCategoria = "https://cl-api.cuponatic-latam.com/api2/cdn/menu/seccion/$categoria?ciudad=Santiago";
             $datosCategoria = \Httpful\Request::get($urlCategoria)
                                     ->sendsJson()
                                     ->send();
             $subcategorias = $datosCategoria->body->hijos;
-            echo 'CATEGORIA: '. $categoria . '<br><br>';
-            foreach ($subcategorias as $subcategoria) {
+            $subcategoriasRequeridas = array(
+                (object)
+                [ 
+                    'slug' => 'aseo-y-limpieza',
+                    'producto' => 'papel higienico/ dispensador / alcohol gel / lavalozas/ limpiavidrio/ desengrasante / dispensador de jabon/ '
+                ],
+                (object)
+                [
+                    'slug' => 'cuidado-de-la-piel',
+                    'producto' => 'jabon'
+                ],
+                (object)
+                [
+                    'slug' => 'otros-cocina',
+                    'producto' => 'dispensador-toalla/ servilleta/dispensador-agua purificada'
+                ],
+                (object)
+                [
+                    'slug' => 'utensilios',
+                    'producto' => 'dispensador-agua'
+                ],
+                (object)
+                [
+                    'slug' => 'higiene',
+                    'producto' => 'servilleta'
+                ],
+                (object)
+                [
+                    'slug' => 'para-el-bano',
+                    'producto' => 'dispensador automatico'
+                ],
+
+            );
+            // dd($subcategorias);
+            // echo 'CATEGORIA: '. $categoria . '<br><br>';
+            foreach ($subcategoriasRequeridas as $subcategoria) {
                 $slug = $subcategoria->slug;
                 echo 'SUBCATEGORIA: '. $subcategoria->slug . '<br><br>';
                 $encontroPagina = true;

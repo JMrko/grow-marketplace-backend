@@ -11,6 +11,7 @@ class audauditorias extends Model
     
     protected $fillable = [
         'audid',
+        'usuid',
         'tpaid',
         'fecid',
         'empid',
@@ -21,7 +22,8 @@ class audauditorias extends Model
         'audaccion',
         'audruta',
         'audlog',
-        'audpk'
+        'audpk',
+        'audtabla'
     ];
 
     public function tpatiposauditorias()
@@ -37,5 +39,10 @@ class audauditorias extends Model
     public function fecfechas()
     {
         return $this->belongsTo('App\Models\fecfechas');
+    }
+
+    public function usuusuarios()
+    {
+        return $this->belongsTo('App\Models\usuusuarios');
     }
 }

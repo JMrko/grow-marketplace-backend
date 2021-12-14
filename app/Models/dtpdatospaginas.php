@@ -17,6 +17,7 @@ class dtpdatospaginas extends Model
         'catid',
         'marid',
         'tpmid',
+        'tumid',
         'dtpnombre',
         'dtpprecio',
         'dtpurl',
@@ -65,5 +66,10 @@ class dtpdatospaginas extends Model
     public function tpmtiposmonedas()
     {
         return $this->belongsTo('App\Models\tpmtiposmonedas');
+    }
+
+    public function tumtiposunidadesmedidas()
+    {
+        return $this->belongsTo('App\Models\tumtiposunidadesmedidas');
     }
 }

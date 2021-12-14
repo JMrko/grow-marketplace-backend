@@ -21,12 +21,13 @@ class Dtpdatospaginas extends Migration
             $table->unsignedInteger('catid')->nullable();
             $table->unsignedInteger('marid')->nullable();
             $table->unsignedInteger('tpmid')->nullable();
+            $table->unsignedInteger('tumid')->nullable();
             $table->string('dtpnombre', 250)->nullable();
             $table->string('dtpprecio', 60)->nullable();
-            $table->string('dtpurl', 350)->nullable(); //250
+            $table->string('dtpurl', 350)->nullable(); 
             $table->string('dtpimagen', 250)->nullable();
             $table->string('dtppagina', 150)->nullable();
-            $table->string('dtpdesclarga',500)->nullable();//250
+            $table->string('dtpdesclarga',500)->nullable();
             $table->string('dtpsigv', 100)->nullable();
             $table->string('dtpcategoria', 150)->nullable();
             $table->string('dtpsku', 100)->nullable();
@@ -42,6 +43,7 @@ class Dtpdatospaginas extends Migration
             $table->foreign('catid')->references('catid')->on('catcategorias');
             $table->foreign('marid')->references('marid')->on('marmarcas');
             $table->foreign('tpmid')->references('tpmid')->on('tpmtiposmonedas');
+            $table->foreign('tumid')->references('tumid')->on('tumtiposunidadesmedidas');
         });
     }
 

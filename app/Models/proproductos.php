@@ -44,4 +44,10 @@ class proproductos extends Model
     {
         return $this->belongsTo('App\Models\tpmtiposmonedas');
     }
+
+    public function prppreciosproductos()
+    {
+        return $this->hasMany('App\Models\prppreciosproductos');
+    }
+    
 }

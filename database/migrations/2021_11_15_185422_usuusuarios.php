@@ -21,6 +21,8 @@ class Usuusuarios extends Migration
             $table->string('usuusuario', 150);
             $table->string('usucontrasenia', 250);
             $table->string('usuimagen', 250)->nullable();
+            $table->string('usutoken', 60)->nullable();
+            $table->string('usucorreo', 50);
             $table->timestamps();
 
             $table->foreign('tpuid')->references('tpuid')->on('tputiposusuarios');

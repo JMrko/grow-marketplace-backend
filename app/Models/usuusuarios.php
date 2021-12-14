@@ -3,6 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Tymon\JWTAuth\Contracts\JWTSubject;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Laravel\Lumen\Auth\Authorizable;
+use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+use Illuminate\Auth\Authenticatable;
 
 class usuusuarios extends Model
 {
@@ -17,7 +23,13 @@ class usuusuarios extends Model
         'usuusuario',
         'usucontrasenia',
         'usuimagen',
+        'usutoken',
+        'usucorreo'
     ];
+
+    // protected $hidden = [
+    //     'usucontrasenia'
+    // ];
 
     public function perpersonas()
     {
@@ -33,4 +45,10 @@ class usuusuarios extends Model
     {
         return $this->hasMany('App\Models\carcargasarchivos');
     }
+
+    public function audauditorias()
+    {
+        return $this->hasMany('App\Models\audauditorias');
+    }
+
 }

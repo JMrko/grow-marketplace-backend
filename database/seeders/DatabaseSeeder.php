@@ -17,5 +17,6 @@ class DatabaseSeeder extends Seeder
         // $this->call('UsersTableSeeder');
         $this->call(tpmtiposmonedasSeeder::class);
         $this->call(pagpaginasSeeder::class);
+        $this->call(tpatiposauditoriasSeeder::class);
     }
 }

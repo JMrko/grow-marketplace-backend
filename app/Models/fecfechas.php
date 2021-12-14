@@ -36,4 +36,9 @@ class fecfechas extends Model
     {
         return $this->hasMany('App\Models\carcargasarchivos');
     }
+
+    public function prppreciosproductos()
+    {
+        return $this->hasMany('App\Models\prppreciosproductos');
+    }
 }

@@ -15,10 +15,11 @@ class Audauditorias extends Migration
     {
         Schema::create('audauditorias', function (Blueprint $table) {
             $table->increments('audid');
+            $table->unsignedInteger('usuid');
             $table->unsignedInteger('tpaid');
             $table->unsignedInteger('fecid');
             $table->unsignedInteger('empid');
-            $table->string('audip');
+            $table->string('audip')->nullable();
             $table->string('audjsonentrada');
             $table->string('audjsonsalida');
             $table->string('auddescripcion');
@@ -26,8 +27,10 @@ class Audauditorias extends Migration
             $table->string('audruta');
             $table->string('audlog');
             $table->string('audpk');
+            $table->string('audtabla')->nullable();
             $table->timestamps();
 
+            $table->foreign('usuid')->references('usuid')->on('usuusuarios');
             $table->foreign('tpaid')->references('tpaid')->on('tpatiposauditorias');
             $table->foreign('fecid')->references('fecid')->on('fecfechas');
             $table->foreign('empid')->references('empid')->on('empempresas');
