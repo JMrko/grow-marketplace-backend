@@ -30,7 +30,8 @@ class dtpdatospaginas extends Model
         'dtpskuhomologado',
         'dtpmarca',
         'dtpstock',
-        'dtpmecanica' 
+        'dtpmecanica',
+        'dtpunidadmedida'
     ];
 
     public function proproductos()

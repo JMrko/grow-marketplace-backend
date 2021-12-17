@@ -35,6 +35,7 @@ class Dtpdatospaginas extends Migration
             $table->string('dtpmarca', 150)->nullable();
             $table->string('dtpstock', 100)->nullable();
             $table->string('dtpmecanica', 250)->nullable();
+            $table->string('dtpunidadmedida', 250)->nullable();
             $table->timestamps();
 
             $table->foreign('pagid')->references('pagid')->on('pagpaginas');

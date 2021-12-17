@@ -31,7 +31,7 @@ class tpatiposauditoriasSeeder extends Seeder
         $tipoAuditoria4->save();
 
         $tipoAuditoria5 = new tpatiposauditorias();
-        $tipoAuditoria5->tpanombre = "Recuperar contraseñia";
+        $tipoAuditoria5->tpanombre = "Recuperar contraseña";
         $tipoAuditoria5->save();
     }
 }

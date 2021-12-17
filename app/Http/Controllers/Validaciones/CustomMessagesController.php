@@ -12,7 +12,9 @@ class CustomMessagesController extends Controller
         return [
             'required'     => 'El campo :attribute es requerido',   
             'correo.email' => 'El campo correo requiere un correo válido',
-            'min'          => 'El campo :attribute debe contener al menos 4 carácteres'
+            'min'          => 'El campo :attribute debe contener al menos 4 carácteres',
+            'string'       => 'El campo debe ser una cadena de carácteres',
+            'unique'       => 'El campo debe ser unico, ingrese otro valor'
         ];
     }
 }

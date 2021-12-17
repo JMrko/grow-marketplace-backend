@@ -33,20 +33,28 @@ $router->get('/scrapingHygiene', 'ScraperController@hygiene');
 $router->get('/scrapingMercado', 'ScraperController@mercado');
 $router->get('/scrapingCuponatic', 'ScraperController@cuponatic');
 
-$router->get('/test', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerDpronto');
-$router->get('/exportar-competencias/{id}', 'Metodos\MetExportarDatosController@exportarCompetencias');
-$router->get('/exportar-usuarios/{id}', 'Metodos\MetExportarDatosController@exportarUsuarios');
-$router->get('/exportar-productos/{id}', 'Metodos\MetExportarDatosController@exportarProductosNoHomologados');
-$router->get('/obtener-compentencias/{pagid}', 'Metodos\Homologaciones\MetAsignarProductoDeCompetenciaController@MetObtenerListaCompetencias');
-$router->get('/obtener-productos/{empid}','Metodos\Homologaciones\MetAsignarProductoDeCompetenciaController@MetObtenerListaProducto');
-$router->patch('/asignar-sku/{dtpid}/{sku}','Metodos\Homologaciones\MetAsignarProductoDeCompetenciaController@MetAsignacionProductoCompetencia');
+$router->get('/test', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerCuponatic');
 
-$router->get('/obtener-tipos-usuarios/{empid}','Metodos\Administrativo\MetUsuariosController@MetObtenerListaTiposUsuarios');
-$router->get('/obtener-usuarios/{empid}','Metodos\Administrativo\MetUsuariosController@MetObtenerListaUsuarios');
-$router->get('/obtener-permisos/{tpuid}','Metodos\Administrativo\MetUsuariosController@MetObtenerListaPermisos');
-$router->get('/obtener-archivos-cargados/{empid}','Metodos\Upload\MetArchivosController@MetObtenerListaArchivosCargados');
+$router->get('/exportar-competencias/{id}', 'Validaciones\ValExportarDatosController@ValExportarCompetencias');
+$router->get('/exportar-usuarios/{id}', 'Validaciones\ValExportarDatosController@ValExportarUsuarios');
+$router->get('/exportar-productos/{id}', 'Validaciones\ValExportarDatosController@ValExportarProductosNoHomologados');
+
+$router->get('/obtener-compentencias/{pagid}', 'Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValObtenerListaCompetencias');
+$router->get('/obtener-productos/{empid}','Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValObtenerListaProducto');
+$router->patch('/asignar-sku/{dtpid}/{proid}','Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValAsignacionProductoCompetencia');
+
+$router->get('/obtener-permisos/{tpuid}','Validaciones\Administrativo\Permisos\ValPermisosController@ValObtenerListaPermisos');
+$router->get('/obtener-archivos-cargados/{empid}','Validaciones\Upload\ValArchivosController@ValObtenerListaArchivosCargados');
 
 $router->post('/crear-usuario', 'Validaciones\Administrativo\Usuarios\ValUsuariosController@ValCrearUsuario');
+$router->patch('/editar-usuario/{usuid}', 'Validaciones\Administrativo\Usuarios\ValUsuariosController@ValEditarUsuario');
+$router->delete('/eliminar-usuario/{usuid}', 'Validaciones\Administrativo\Usuarios\ValUsuariosController@ValEliminarUsuario');
+$router->get('/obtener-usuarios/{empid}', 'Validaciones\Administrativo\Usuarios\ValUsuariosController@ValListarUsuarios');
+
+$router->post('/crear-tipo-usuario', 'Validaciones\Administrativo\TiposUsuarios\ValTiposUsuariosController@ValCrearTipoUsuario');
+$router->patch('/editar-tipo-usuario/{tpuid}', 'Validaciones\Administrativo\TiposUsuarios\ValTiposUsuariosController@ValEditarTipoUsuario');
+$router->delete('/eliminar-tipo-usuario/{tpuid}', 'Validaciones\Administrativo\TiposUsuarios\ValTiposUsuariosController@ValEliminarTipoUsuario');
+$router->get('/obtener-tipos-usuarios/{empid}', 'Validaciones\Administrativo\TiposUsuarios\ValTiposUsuariosController@ValListarTiposUsuarios');
 
 $router->post('/login','Validaciones\Login\LoginController@ValLogin');
 $router->post('/register','Validaciones\Login\LoginController@ValRegistrarUsuario');

@@ -663,26 +663,148 @@ class ScraperController extends Controller
         $alcohol = 'https://www.hygiene.cl/categoria-producto/elementos-proteccion-personal/proteccion-piel/';
         $lavaloza = 'https://www.hygiene.cl/categoria-producto/alimentaria/lavalozas/';
 
-        $paginaURL = $lavaloza;
-        $crawler = $client->request('GET', $paginaURL);
-        $tituloCategoria = $crawler->filter(".page-title");
-        echo $tituloCategoria->text('-') . '<br>';
-        echo '<br>';
+        $categoriasLink = array(
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/higenicos/',
+                'categoria'             => 'Papel Higienico'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/toallas/dobladas/',
+                'categoria'             => 'Toalla Doblada'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/toallas/toallas-rollo/',
+                'categoria'             => 'Toalla Rollo'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/toallas/wipe/',
+                'categoria'             => 'Toalla Wipe'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/jabones/',
+                'categoria'             => 'Jabon'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/otros-papeles/sabanillas-medicas/',
+                'categoria'             => 'Sabanillas Medicas'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/desengrasantes/',
+                'categoria'             => 'Desengrasantes'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/accesorios-superficies/panos/',
+                'categoria'             => 'Paños'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/otros-papeles/panuelos-faciales/',
+                'categoria'             => 'Pañuelos Faciales'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/servilletas-gourmet/',
+                'categoria'             => 'Servilleta Gourmet'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/alimentaria/servilletas/servilletas-mesa/',
+                'categoria'             => 'Servilleta Mesa'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/alimentaria/servilletas/servilletas-interfoliadas/',
+                'categoria'             => 'Servilleta Interfoliada'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/alimentaria/servilletas/servilleta-coctel/',
+                'categoria'             => 'Servilleta Coctel'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/alimentaria/servilletas/servilletas-lunch/',
+                'categoria'             => 'Servilleta Lunch'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/alimentaria/servilletas/dispensadores-servilletas/',
+                'categoria'             => 'Dispensador de Servilletas'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/higenicos/dispensadores-higienicos/',
+                'categoria'             => 'Dispensador Higienico'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/jabones/dispensadores-jabones/',
+                'categoria'             => 'Dispensador Jabones'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/toallas/dispensadores-toallas/',
+                'categoria'             => 'Dispensador Toalla'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/incontinencia/incontinencia-hombres/',
+                'categoria'             => 'Incontinencia Hombres',
+                'producto'              => 'Pañal'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/elementos-proteccion-personal/proteccion-piel/',
+                'categoria'             => 'Proteccion Piel',
+                'producto'              => 'Alcohol'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/alimentaria/lavalozas/',
+                'categoria'             => 'Lavalozas'
+            ],
+        );
+        foreach ($categoriasLink as $categoriaLink) {
 
-        $crawler->filter(".classic")->each(function($node){
-            $imagenProducto = $node->filter("[class='attachment-woocommerce_thumbnail size-woocommerce_thumbnail']")->attr('src');
-            $nombreProducto = $node->filter("[class='woocommerce-loop-product__title']");
-            $urlProducto = $node->filter(".product-wrap > a")->attr('href');
-            $precioProducto = $node->filter("[class='price']");
-            echo 'Nombre Producto: '. $nombreProducto->text() . '<br>';
-            echo 'Precio Producto: ' . $precioProducto->text() . '<br>';
-            echo 'URL Producto: ';
-            var_dump($urlProducto);
-            echo  '<br>';
-            echo 'Imagen: ';
-            var_dump($imagenProducto);
-            echo '<br><br>';
-        });
+            $paginaURL = $categoriaLink->linkCategoriaProducto;
+                $crawler = $client->request('GET', $paginaURL);
+                $tituloCategoria = $crawler->filter(".page-title");
+                echo $tituloCategoria->text('-') . '<br>';
+                echo '<br>';
+
+                $crawler->filter(".classic")->each(function($node){
+                    $imagenProducto = $node->filter("[class='attachment-woocommerce_thumbnail size-woocommerce_thumbnail']")->attr('src');
+                    $nombreProducto = $node->filter("[class='woocommerce-loop-product__title']");
+                    $urlProducto = $node->filter(".product-wrap > a")->attr('href');
+                    $precioProducto = $node->filter("[class='price']")->text();
+
+                    if ( strpos($precioProducto,"–")) {
+                        $precioString = explode("+",$precioProducto);
+                        $precioStringFinal = trim($precioString[0]);
+                    }else{
+                        $precioString = explode("$",$precioProducto);
+                        $precioString2 = explode("+",$precioString[1]);
+                        $precioStringFinal = trim($precioString2[0]);
+                    }
+
+                    echo 'Nombre Producto: '. $nombreProducto->text() . '<br>';
+                    echo 'Precio Producto: ' . $precioStringFinal . '<br>';
+                    echo 'URL Producto: ';
+                    var_dump($urlProducto);
+                    echo  '<br>';
+                    echo 'Imagen: ';
+                    var_dump($imagenProducto);
+                    echo '<br><br>';
+                });
+        }
     }
 
     public function mercado(){

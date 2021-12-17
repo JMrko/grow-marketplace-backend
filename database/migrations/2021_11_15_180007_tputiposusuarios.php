@@ -15,7 +15,7 @@ class Tputiposusuarios extends Migration
     {
         Schema::create('tputiposusuarios', function (Blueprint $table) {
             $table->increments('tpuid');
-            $table->unsignedInteger('empid');
+            $table->unsignedInteger('empid')->nullable();
             $table->string('tpunombre', 150);
             $table->string('tpuprivilegio', 50)->nullable();
             $table->timestamps();

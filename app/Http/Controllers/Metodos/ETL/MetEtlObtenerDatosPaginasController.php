@@ -49,6 +49,202 @@ class MetEtlObtenerDatosPaginasController extends Controller
         }
         return $fecid;
     }
+
+    public function obtenerUnidadMedida($nombreProducto)
+    {
+        $unidades = array(
+            (object)
+            [
+                'nombre' => 'mts',
+                'valor'  => 'Metros'
+            ],
+            (object)
+            [
+                'nombre' => 'metro',
+                'valor'  => 'Metros'
+            ],
+            (object)
+            [
+                'nombre' => 'paquete',
+                'valor'  => 'Paquete'
+            ],
+            (object)
+            [
+                'nombre' => 'paquete',
+                'valor'  => 'Paquete'
+            ],
+            (object)
+            [
+                'nombre' => ' lts',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => ' lt',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '1lt',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '2lt',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '3lt',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '4lt',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '5lt',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '6lt',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '7lt',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '8lt',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '9lt',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '0lt',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => 'litro',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => 'litros',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => 'ml',
+                'valor'  => 'Mililitros'
+            ],
+            (object)
+            [
+                'nombre' => 'unidades',
+                'valor'  => 'Unidades'
+            ],
+            (object)
+            [
+                'nombre' => 'kg',
+                'valor'  => 'Kilogramos'
+            ],
+            (object)
+            [
+                'nombre' => 'rollos',
+                'valor'  => 'Rollos'
+            ],
+            (object)
+            [
+                'nombre' => ' u',
+                'valor'  => 'Unidades'
+            ],
+            (object)
+            [
+                'nombre' => ' bidón',
+                'valor'  => 'Bidones'
+            ],
+            (object)
+            [
+                'nombre' => ' caja',
+                'valor'  => 'Cajas'
+            ],
+            (object)
+            [
+                'nombre' => 'cm',
+                'valor'  => 'Centimetros'
+            ],
+            (object)
+            [
+                'nombre' => '1L',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '2L',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '3L',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '4L',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '5L',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '6L',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '7L',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '8L',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '9L',
+                'valor'  => 'Litros'
+            ],
+            (object)
+            [
+                'nombre' => '0L',
+                'valor'  => 'Litros'
+            ],
+        );
+
+        foreach ($unidades as $unidad) {
+            if (stristr($nombreProducto,$unidad->nombre)) {
+                $dtpunidadmedida = $unidad->valor;
+                break;
+            }else{
+                $dtpunidadmedida = null;
+            }   
+        }
+        return $dtpunidadmedida;
+    }
     
     public function MetObtenerArcalauquen(Client $client)
     {
@@ -90,6 +286,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 'categoria'             => 'Paños'
             ]
             );
+        
         if($this->validarDataPorFecha(1, true)){
             foreach ($categoriasLink as $categoriaLink) { 
                 $paginaURLPages = $categoriaLink->linkCategoriaProducto;
@@ -108,8 +305,10 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $crawler->filter(".js-product-miniature-wrapper")->each(function($node) use($pagina, $tituloCategoria, $pagId){
                         $imagenProducto = $node->filter(".product-thumbnail > img")->attr('data-src');
                         $nombreProducto = $node->filter("[class='h3 product-title']")->text();
+                        $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                         $precioProducto = $node->filter("[class='product-price-and-shipping']")->text();
                         $precioString = explode("$",$precioProducto);
+                        $precioStringFinal = trim($precioString[0]);
                         $urlProducto = $node->filter("[class='thumbnail product-thumbnail']")->attr('href');
                         $descProducto = $node->filter(".product-description-short")->text();
                         $stockProducto = $node->filter("[class='product-availability d-block']")->text();
@@ -118,17 +317,18 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $fecid = $this->validarDataPorFecha(1);
 
                         $dtpdatospaginas = new dtpdatospaginas();
-                        $dtpdatospaginas->fecid        = $fecid;
-                        $dtpdatospaginas->pagid        = $pagId;
-                        $dtpdatospaginas->dtpnombre    = $nombreProducto;
-                        $dtpdatospaginas->dtpprecio    = $precioString[0];
-                        $dtpdatospaginas->dtpurl       = $urlProducto;
-                        $dtpdatospaginas->dtpimagen    = $imagenProducto;
-                        $dtpdatospaginas->dtpdesclarga = $descProducto;
-                        $dtpdatospaginas->dtppagina    = $pagina;
-                        $dtpdatospaginas->dtpcategoria = $tituloCategoria;
-                        $dtpdatospaginas->dtpstock     = $stockProducto;
-                        $dtpdatospaginas->dtpsku       = $skuProducto;
+                        $dtpdatospaginas->fecid           = $fecid;
+                        $dtpdatospaginas->pagid           = $pagId;
+                        $dtpdatospaginas->dtpnombre       = $nombreProducto;
+                        $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                        $dtpdatospaginas->dtpurl          = $urlProducto;
+                        $dtpdatospaginas->dtpimagen       = $imagenProducto;
+                        $dtpdatospaginas->dtpdesclarga    = $descProducto;
+                        $dtpdatospaginas->dtppagina       = $pagina;
+                        $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
+                        $dtpdatospaginas->dtpstock        = $stockProducto;
+                        $dtpdatospaginas->dtpsku          = $skuProducto;
+                        $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
                         $dtpdatospaginas->save();
                     });
                 }
@@ -180,20 +380,23 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 $crawler->filter(".product-grid-item")->each(function($node) use($pagId, $tituloCategoria){
                     $imagenProducto = $node->filter(".lazy-image > img")->attr('data-src');
                     $nombreProducto = $node->filter("[class='h5--accent strong name_wrapper']")->text();
+                    $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                     $precioProducto = $node->filter("[class='money']")->text();
                     $precioString = explode("$",$precioProducto);
+                    $precioStringFinal = trim($precioString[1]);
                     $urlProducto = $node->filter(".lazy-image")->attr('href');
                     
                     $fecid = $this->validarDataPorFecha(2);
                     
                     $dtpdatospaginas = new dtpdatospaginas();
-                    $dtpdatospaginas->pagid        = $pagId;
-                    $dtpdatospaginas->fecid        = $fecid;
-                    $dtpdatospaginas->dtpnombre    = $nombreProducto;
-                    $dtpdatospaginas->dtpprecio    = $precioString[1];
-                    $dtpdatospaginas->dtpcategoria = $tituloCategoria;
-                    $dtpdatospaginas->dtpurl       = $urlProducto;
-                    $dtpdatospaginas->dtpimagen    = $imagenProducto;   
+                    $dtpdatospaginas->pagid           = $pagId;
+                    $dtpdatospaginas->fecid           = $fecid;
+                    $dtpdatospaginas->dtpnombre       = $nombreProducto;
+                    $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                    $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
+                    $dtpdatospaginas->dtpurl          = $urlProducto;
+                    $dtpdatospaginas->dtpimagen       = $imagenProducto; 
+                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;  
                     $dtpdatospaginas->save();
                 });
             }
@@ -238,22 +441,25 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $nombreProducto = explode ("Un.", $nombrePrecioProducto);
                     $precioProducto = explode("Precio:", $nombrePrecioProducto);
                     $precioString = explode("$",$precioProducto[1]);
-                    $precioStringFinal = explode("+", $precioString[1]);
+                    $precioString2 = explode("+", $precioString[1]);
+                    $precioStringFinal = trim($precioString2[0]);
                     $marcaProducto = $node->filter(".box-contenido > h4")->text();
                     $skuProducto = $node->filter("p > span")->text();
                     $nombreCompleto = $marcaProducto .' '. $nombreProducto[0];
+                    $dtpunidadmedida = $this->obtenerUnidadMedida($nombreCompleto);
 
                     $fecid = $this->validarDataPorFecha(3);
 
                     $dtpdatospaginas = new dtpdatospaginas();
-                    $dtpdatospaginas->pagid        = $pagId;
-                    $dtpdatospaginas->fecid        = $fecid;
-                    $dtpdatospaginas->dtpnombre    = $nombreCompleto;
-                    $dtpdatospaginas->dtpimagen    = $imagenProducto;
-                    $dtpdatospaginas->dtpcategoria = $tituloCategoria;
-                    $dtpdatospaginas->dtpmarca     = $marcaProducto;
-                    $dtpdatospaginas->dtpsku       = $skuProducto;
-                    $dtpdatospaginas->dtpprecio    = $precioStringFinal[0];
+                    $dtpdatospaginas->pagid           = $pagId;
+                    $dtpdatospaginas->fecid           = $fecid;
+                    $dtpdatospaginas->dtpnombre       = $nombreCompleto;
+                    $dtpdatospaginas->dtpimagen       = $imagenProducto;
+                    $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
+                    $dtpdatospaginas->dtpmarca        = $marcaProducto;
+                    $dtpdatospaginas->dtpsku          = $skuProducto;
+                    $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;  
                     $dtpdatospaginas->save();
                 });
             }
@@ -350,8 +556,10 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $crawler->filter("[class='product-miniature product-style js-product-miniature']")->each(function($node) use($tituloCategoria, $pagina, $pagId){
                         $imagenProducto = $node->filter(".product-cover-link > img")->attr('src');
                         $nombreProducto = $node->filter(".product-name")->text();
+                        $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                         $precioProducto = $node->filter("[class='price product-price']")->text();
                         $precioString = explode("$",$precioProducto);
+                        $precioStringFinal = trim($precioString[0]);
                         $urlProducto = $node->filter(".product-name > a")->attr('href');
                         $stringSkuProducto = $node->filter(".second-block > h4")->text();
                         $skuProducto = explode ("Ref:", $stringSkuProducto);
@@ -361,17 +569,18 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $fecid = $this->validarDataPorFecha(4);
 
                         $dtpdatospaginas = new dtpdatospaginas();
-                        $dtpdatospaginas->pagid        = $pagId;
-                        $dtpdatospaginas->fecid        = $fecid;
-                        $dtpdatospaginas->dtpnombre    = $nombreProducto;
-                        $dtpdatospaginas->dtpimagen    = $imagenProducto;
-                        $dtpdatospaginas->dtpcategoria = $tituloCategoria;
-                        $dtpdatospaginas->dtpurl       = $urlProducto;
-                        $dtpdatospaginas->dtpprecio    = $precioString[0];
-                        $dtpdatospaginas->dtppagina    = $pagina;
-                        $dtpdatospaginas->dtpstock     = $stockProducto;
-                        $dtpdatospaginas->dtpsku       = $skuProducto[1];
-                        $dtpdatospaginas->dtpdesclarga = $descProducto;
+                        $dtpdatospaginas->pagid           = $pagId;
+                        $dtpdatospaginas->fecid           = $fecid;
+                        $dtpdatospaginas->dtpnombre       = $nombreProducto;
+                        $dtpdatospaginas->dtpimagen       = $imagenProducto;
+                        $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
+                        $dtpdatospaginas->dtpurl          = $urlProducto;
+                        $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                        $dtpdatospaginas->dtppagina       = $pagina;
+                        $dtpdatospaginas->dtpstock        = $stockProducto;
+                        $dtpdatospaginas->dtpsku          = $skuProducto[1];
+                        $dtpdatospaginas->dtpdesclarga    = $descProducto;
+                        $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;     
                         $dtpdatospaginas->save();
                     });
                 }
@@ -499,20 +708,23 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 $crawler->filter(".isotope-item")->each(function($node) use($tituloCategoria, $pagId){
                     $imagenProducto = $node->filter("[class='scale-with-grid wp-post-image']")->attr('src');
                     $nombreProducto = $node->filter(".desc > h4")->text();
+                    $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                     $urlProducto = $node->filter(".image_wrapper > a")->attr('href');
                     $precioProducto = $node->filter("[class='woocommerce-Price-amount amount']")->text();
                     $precioString = explode("$",$precioProducto);
+                    $precioStringFinal = trim($precioString[1]);
 
                     $fecid = $this->validarDataPorFecha(5);
 
                     $dtpdatospaginas = new dtpdatospaginas();
-                    $dtpdatospaginas->pagid        = $pagId;
-                    $dtpdatospaginas->fecid        = $fecid;
-                    $dtpdatospaginas->dtpnombre    = $nombreProducto;
-                    $dtpdatospaginas->dtpurl       = $urlProducto;
-                    $dtpdatospaginas->dtpimagen    = $imagenProducto;
-                    $dtpdatospaginas->dtpprecio    = $precioString[1];
-                    $dtpdatospaginas->dtpcategoria = $tituloCategoria;
+                    $dtpdatospaginas->pagid           = $pagId;
+                    $dtpdatospaginas->fecid           = $fecid;
+                    $dtpdatospaginas->dtpnombre       = $nombreProducto;
+                    $dtpdatospaginas->dtpurl          = $urlProducto;
+                    $dtpdatospaginas->dtpimagen       = $imagenProducto;
+                    $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                    $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
+                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
                     $dtpdatospaginas->save();
                 });
             }
@@ -608,23 +820,26 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $crawler->filter("[class='jsx-411745769 product ie11-product-container']")->each(function($node) use($tituloCategoria, $pagina, $pagId){
                         $imagenProducto = $node->filter("[class='image-contain ie11-image-contain  __lazy']")->attr('data-src');
                         $nombreProducto = $node->filter("[class='jsx-411745769 product-title']")->text();
+                        $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                         $marcaProducto = $node->filter("[class='jsx-411745769 product-brand']")->text();
                         $urlProducto = $node->filter("[class='jsx-4282314783 link link-primary ']")->attr('href');
                         $precioProducto = $node->filter("[class='jsx-4135487716']")->text();
                         $precioString = explode("$",$precioProducto);
+                        $precioStringFinal = trim($precioString[1]);
 
                         $fecid = $this->validarDataPorFecha(6);
 
                         $dtpdatospaginas = new dtpdatospaginas();
-                        $dtpdatospaginas->pagid        = $pagId;
-                        $dtpdatospaginas->fecid        = $fecid;
-                        $dtpdatospaginas->dtpnombre    = $nombreProducto;
-                        $dtpdatospaginas->dtpurl       = $urlProducto;
-                        $dtpdatospaginas->dtpimagen    = $imagenProducto;
-                        $dtpdatospaginas->dtpprecio    = $precioString[1];
-                        $dtpdatospaginas->dtpcategoria = $tituloCategoria;
-                        $dtpdatospaginas->dtpmarca     = $marcaProducto;
-                        $dtpdatospaginas->dtppagina    = $pagina;
+                        $dtpdatospaginas->pagid           = $pagId;
+                        $dtpdatospaginas->fecid           = $fecid;
+                        $dtpdatospaginas->dtpnombre       = $nombreProducto;
+                        $dtpdatospaginas->dtpurl          = $urlProducto;
+                        $dtpdatospaginas->dtpimagen       = $imagenProducto;
+                        $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                        $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
+                        $dtpdatospaginas->dtpmarca        = $marcaProducto;
+                        $dtpdatospaginas->dtppagina       = $pagina;
+                        $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
                         $dtpdatospaginas->save();
                     });
                 }
@@ -688,20 +903,23 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 $crawler->filter("[class='product-small box ']")->each(function($node) use($tituloCategoria, $pagId){
                     $imagenProducto = $node->filter(".image-zoom > a > img")->attr('data-src');
                     $nombreProducto = $node->filter("[class='woocommerce-LoopProduct-link woocommerce-loop-product__link']")->text();
+                    $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                     $urlProducto = $node->filter("[class='woocommerce-LoopProduct-link woocommerce-loop-product__link']")->attr('href');
                     $precioProducto = $node->filter("[class='woocommerce-Price-amount amount']")->text();
                     $precioString = explode("$",$precioProducto);
+                    $precioStringFinal = trim($precioString[1]);
 
                     $fecid = $this->validarDataPorFecha(7);
 
                     $dtpdatospaginas = new dtpdatospaginas();
-                    $dtpdatospaginas->pagid        = $pagId;
-                    $dtpdatospaginas->fecid        = $fecid;
-                    $dtpdatospaginas->dtpnombre    = $nombreProducto;
-                    $dtpdatospaginas->dtpurl       = $urlProducto;
-                    $dtpdatospaginas->dtpimagen    = $imagenProducto;
-                    $dtpdatospaginas->dtpprecio    = $precioString[1];
-                    $dtpdatospaginas->dtpcategoria = $tituloCategoria;
+                    $dtpdatospaginas->pagid           = $pagId;
+                    $dtpdatospaginas->fecid           = $fecid;
+                    $dtpdatospaginas->dtpnombre       = $nombreProducto;
+                    $dtpdatospaginas->dtpurl          = $urlProducto;
+                    $dtpdatospaginas->dtpimagen       = $imagenProducto;
+                    $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                    $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
+                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
                     $dtpdatospaginas->save();   
                 });
             }
@@ -768,20 +986,24 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 $crawler->filter(".products > li")->each(function($node) use($tituloCategoria, $pagId){
                     $imagenProducto = $node->filter("[class='attachment-woocommerce_thumbnail size-woocommerce_thumbnail']")->attr('src');
                     $nombreProducto = $node->filter("[class='woocommerce-loop-product__title']")->text();
+                    $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                     $urlProducto = $node->filter("[class='woocommerce-LoopProduct-link woocommerce-loop-product__link']")->attr('href');
                     $precioProducto = $node->filter("[class='woocommerce-Price-amount amount']")->text();
-                    
+                    $precioString = explode("$",$precioProducto);
+                    $precioStringFinal = trim($precioString[1]);
+
                     $fecid = $this->validarDataPorFecha(8);
 
                     $dtpdatospaginas = new dtpdatospaginas();
-                    $dtpdatospaginas->pagid        = $pagId;
-                    $dtpdatospaginas->fecid        = $fecid;
-                    $dtpdatospaginas->dtpnombre    = $nombreProducto;
-                    $dtpdatospaginas->dtpurl       = $urlProducto;
-                    $dtpdatospaginas->dtpimagen    = $imagenProducto;
-                    $dtpdatospaginas->dtpprecio    = $precioProducto;
-                    $dtpdatospaginas->dtpcategoria = $tituloCategoria;
-                    $dtpdatospaginas->save();   
+                    $dtpdatospaginas->pagid           = $pagId;
+                    $dtpdatospaginas->fecid           = $fecid;
+                    $dtpdatospaginas->dtpnombre       = $nombreProducto;
+                    $dtpdatospaginas->dtpurl          = $urlProducto;
+                    $dtpdatospaginas->dtpimagen       = $imagenProducto;
+                    $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                    $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
+                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
+                    $dtpdatospaginas->save();  
                 });
             }
         }
@@ -889,22 +1111,27 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $crawler->filter("[class='product-block']")->each(function($node) use($tituloCategoria, $pagina, $pagId){
                         $imagenProducto = $node->filter("[class='img-fluid']")->attr('src');
                         $nombreProducto = $node->filter("[class='brand-name trsn']")->text();
+                        $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                         $urlProducto = $node->filter(".product-block > a")->attr('href');
                         $precioProducto = $node->filter("[class='block-price']")->text();
+                        $precioString = explode("$",$precioProducto);
+                        $precioString2 = explode("CLP",$precioString[1]);
+                        $precioStringFinal = trim($precioString2[0]);
                         $marcaProducto = $node->filter("[class='brand']")->text('-');
 
                         $fecid = $this->validarDataPorFecha(9);
 
                         $dtpdatospaginas = new dtpdatospaginas();
-                        $dtpdatospaginas->pagid        = $pagId;
-                        $dtpdatospaginas->fecid        = $fecid;
-                        $dtpdatospaginas->dtpnombre    = $nombreProducto;
-                        $dtpdatospaginas->dtpurl       = $urlProducto;
-                        $dtpdatospaginas->dtpimagen    = $imagenProducto;
-                        $dtpdatospaginas->dtpprecio    = $precioProducto;
-                        $dtpdatospaginas->dtpcategoria = $tituloCategoria;
-                        $dtpdatospaginas->dtppagina    = $pagina;
-                        $dtpdatospaginas->dtpmarca     = $marcaProducto;
+                        $dtpdatospaginas->pagid           = $pagId;
+                        $dtpdatospaginas->fecid           = $fecid;
+                        $dtpdatospaginas->dtpnombre       = $nombreProducto;
+                        $dtpdatospaginas->dtpurl          = $urlProducto;
+                        $dtpdatospaginas->dtpimagen       = $imagenProducto;
+                        $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                        $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
+                        $dtpdatospaginas->dtppagina       = $pagina;
+                        $dtpdatospaginas->dtpmarca        = $marcaProducto;
+                        $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
                         $dtpdatospaginas->save();   
                     });
                 }
@@ -974,20 +1201,23 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $crawler->filter("[class='thumbnail-container']")->each(function($node) use($tituloCategoria, $pagina, $pagId){
                         $imagenProducto = $node->filter("[class='ttproduct-img1']")->attr('src');
                         $nombreProducto = $node->filter("[class='h3 product-title']")->text();
+                        $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                         $urlProducto = $node->filter("[class='thumbnail product-thumbnail']")->attr('href');
                         $precioProducto = $node->filter("[class='price']")->text();
-                        
+                        $precioString = explode("$",$precioProducto);
+                        $precioStringFinal = trim($precioString[1]);
                         $fecid = $this->validarDataPorFecha(10);
 
                         $dtpdatospaginas = new dtpdatospaginas();
-                        $dtpdatospaginas->pagid        = $pagId;
-                        $dtpdatospaginas->fecid        = $fecid;
-                        $dtpdatospaginas->dtpnombre    = $nombreProducto;
-                        $dtpdatospaginas->dtpurl       = $urlProducto;
-                        $dtpdatospaginas->dtpimagen    = $imagenProducto;
-                        $dtpdatospaginas->dtpprecio    = $precioProducto;
-                        $dtpdatospaginas->dtpcategoria = $tituloCategoria;
-                        $dtpdatospaginas->dtppagina    = $pagina;
+                        $dtpdatospaginas->pagid           = $pagId;
+                        $dtpdatospaginas->fecid           = $fecid;
+                        $dtpdatospaginas->dtpnombre       = $nombreProducto;
+                        $dtpdatospaginas->dtpurl          = $urlProducto;
+                        $dtpdatospaginas->dtpimagen       = $imagenProducto;
+                        $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                        $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
+                        $dtpdatospaginas->dtppagina       = $pagina;
+                        $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
                         $dtpdatospaginas->save();
                     });
                 }
@@ -1076,20 +1306,24 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $crawler->filter("[class='grilla']")->each(function($node) use($tituloCategoria, $pagina, $pagId){
                         $imagenProducto = $node->filter(".imgGrilla > img")->attr('src');
                         $nombreProducto = $node->filter("[class='nombreGrilla']")->text();
+                        $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                         $urlProducto = $node->filter("[class='nombreGrilla']")->attr('href');
                         $precioProducto = $node->filter("[class='conDescuento']")->text();
-                        
+                        $precioString = explode("$",$precioProducto);
+                        $precioStringFinal = trim($precioString[1]);
+
                         $fecid = $this->validarDataPorFecha(11);
 
                         $dtpdatospaginas = new dtpdatospaginas();
-                        $dtpdatospaginas->pagid        = $pagId;
-                        $dtpdatospaginas->fecid        = $fecid;
-                        $dtpdatospaginas->dtpnombre    = $nombreProducto;
-                        $dtpdatospaginas->dtpurl       = $urlProducto;
-                        $dtpdatospaginas->dtpimagen    = $imagenProducto;
-                        $dtpdatospaginas->dtpprecio    = $precioProducto;
-                        $dtpdatospaginas->dtpcategoria = $tituloCategoria;
-                        $dtpdatospaginas->dtppagina    = $pagina;
+                        $dtpdatospaginas->pagid           = $pagId;
+                        $dtpdatospaginas->fecid           = $fecid;
+                        $dtpdatospaginas->dtpnombre       = $nombreProducto;
+                        $dtpdatospaginas->dtpurl          = $urlProducto;
+                        $dtpdatospaginas->dtpimagen       = $imagenProducto;
+                        $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                        $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
+                        $dtpdatospaginas->dtppagina       = $pagina;
+                        $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
                         $dtpdatospaginas->save();
                     });
                 }
@@ -1153,20 +1387,24 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 $crawler->filter("[class='ui-search-result__wrapper']")->each(function($node) use($tituloCategoria, $pagId){
                     $imagenProducto = $node->filter(".slick-slide > img")->attr('src');
                     $nombreProducto = $node->filter("[class='ui-search-item__title']")->text();
+                    $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                     $urlProducto = $node->filter("[class='ui-search-item__group__element ui-search-link']")->attr('href');
                     $precioProducto = $node->filter("[class='price-tag-amount']")->text();
+                    $precioString = explode("$",$precioProducto);
+                    $precioStringFinal = trim($precioString[1]);
 
                     $fecid = $this->validarDataPorFecha(12);
 
                     $dtpdatospaginas = new dtpdatospaginas();
-                    $dtpdatospaginas->pagid        = $pagId;
-                    $dtpdatospaginas->fecid        = $fecid;
-                    $dtpdatospaginas->dtpnombre    = $nombreProducto;
-                    $dtpdatospaginas->dtpurl       = $urlProducto;
-                    $dtpdatospaginas->dtpimagen    = $imagenProducto;
-                    $dtpdatospaginas->dtpprecio    = $precioProducto;
-                    $dtpdatospaginas->dtpcategoria = $tituloCategoria;
-                    $dtpdatospaginas->save();    
+                    $dtpdatospaginas->pagid           = $pagId;
+                    $dtpdatospaginas->fecid           = $fecid;
+                    $dtpdatospaginas->dtpnombre       = $nombreProducto;
+                    $dtpdatospaginas->dtpurl          = $urlProducto;
+                    $dtpdatospaginas->dtpimagen       = $imagenProducto;
+                    $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                    $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
+                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;    
+                    $dtpdatospaginas->save();  
                 });
             }
         }
@@ -1293,19 +1531,30 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 $crawler->filter(".classic")->each(function($node) use($tituloCategoria, $pagId){
                     $imagenProducto = $node->filter("[class='attachment-woocommerce_thumbnail size-woocommerce_thumbnail']")->attr('src');
                     $nombreProducto = $node->filter("[class='woocommerce-loop-product__title']")->text();
+                    $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                     $urlProducto = $node->filter(".product-wrap > a")->attr('href');
                     $precioProducto = $node->filter("[class='price']")->text();
+                  
+                    if ( strpos($precioProducto,"–")) {
+                        $precioString = explode("+",$precioProducto);
+                        $precioStringFinal = trim($precioString[0]);
+                    }else{
+                        $precioString = explode("$",$precioProducto);
+                        $precioString2 = explode("+",$precioString[1]);
+                        $precioStringFinal = trim($precioString2[0]);
+                    }
                     
                     $fecid = $this->validarDataPorFecha(13);
 
                     $dtpdatospaginas = new dtpdatospaginas();
-                    $dtpdatospaginas->pagid        = $pagId;
-                    $dtpdatospaginas->fecid        = $fecid;
-                    $dtpdatospaginas->dtpnombre    = $nombreProducto;
-                    $dtpdatospaginas->dtpurl       = $urlProducto;
-                    $dtpdatospaginas->dtpimagen    = $imagenProducto;
-                    $dtpdatospaginas->dtpprecio    = $precioProducto;
-                    $dtpdatospaginas->dtpcategoria = $tituloCategoria;
+                    $dtpdatospaginas->pagid           = $pagId;
+                    $dtpdatospaginas->fecid           = $fecid;
+                    $dtpdatospaginas->dtpnombre       = $nombreProducto;
+                    $dtpdatospaginas->dtpurl          = $urlProducto;
+                    $dtpdatospaginas->dtpimagen       = $imagenProducto;
+                    $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                    $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
+                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
                     $dtpdatospaginas->save(); 
                 });
             }
@@ -1394,18 +1643,20 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 foreach ($productos as $producto) 
                 {
                     $fecid = $this->validarDataPorFecha(14);
+                    $dtpunidadmedida = $this->obtenerUnidadMedida($producto->name);
 
                     $dtpdatospaginas = new dtpdatospaginas();
-                    $dtpdatospaginas->pagid        = $pagId;
-                    $dtpdatospaginas->fecid        = $fecid;
-                    $dtpdatospaginas->dtpnombre    = $producto->name;
-                    $dtpdatospaginas->dtppagina    = $pagina;
-                    $dtpdatospaginas->dtpimagen    = $producto->photosUrls[0];
-                    $dtpdatospaginas->dtpprecio    = $producto->price;
-                    $dtpdatospaginas->dtpcategoria = $tituloCategoria;
-                    $dtpdatospaginas->dtpsku       = $producto->sku;
-                    $dtpdatospaginas->dtpstock     = $producto->stock;
-                    $dtpdatospaginas->dtpdesclarga = $producto->description;
+                    $dtpdatospaginas->pagid           = $pagId;
+                    $dtpdatospaginas->fecid           = $fecid;
+                    $dtpdatospaginas->dtpnombre       = $producto->name;
+                    $dtpdatospaginas->dtppagina       = $pagina;
+                    $dtpdatospaginas->dtpimagen       = $producto->photosUrls[0];
+                    $dtpdatospaginas->dtpprecio       = $producto->price;
+                    $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
+                    $dtpdatospaginas->dtpsku          = $producto->sku;
+                    $dtpdatospaginas->dtpstock        = $producto->stock;
+                    $dtpdatospaginas->dtpdesclarga    = $producto->description;
+                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
                     $dtpdatospaginas->save(); 
                 }
             }
@@ -1479,17 +1730,22 @@ class MetEtlObtenerDatosPaginasController extends Controller
 
                             $fecid = $this->validarDataPorFecha(15);
 
+                            $precioString = explode("$",$productosSubcategoria->valor_oferta);
+                            $precioStringFinal = trim($precioString[1]);
+                            $dtpunidadmedida = $this->obtenerUnidadMedida($productosSubcategoria->titulo);
+
                             $dtpdatospaginas = new dtpdatospaginas();
-                            $dtpdatospaginas->pagid        = $pagId;
-                            $dtpdatospaginas->fecid        = $fecid;
-                            $dtpdatospaginas->dtpnombre    = $productosSubcategoria->titulo;
-                            $dtpdatospaginas->dtppagina    = $numeroPaginas;
-                            $dtpdatospaginas->dtpimagen    = $productosSubcategoria->imagen;
-                            $dtpdatospaginas->dtpprecio    = $productosSubcategoria->valor_oferta;
-                            $dtpdatospaginas->dtpcategoria = $categoria;
-                            $dtpdatospaginas->dtpurl       = $productosSubcategoria->url_desktop;
-                            $dtpdatospaginas->dtpstock     = $productosSubcategoria->estado_venta;
-                            $dtpdatospaginas->dtpmarca     = $productosSubcategoria->marcas;
+                            $dtpdatospaginas->pagid           = $pagId;
+                            $dtpdatospaginas->fecid           = $fecid;
+                            $dtpdatospaginas->dtpnombre       = $productosSubcategoria->titulo;
+                            $dtpdatospaginas->dtppagina       = $numeroPaginas;
+                            $dtpdatospaginas->dtpimagen       = $productosSubcategoria->imagen;
+                            $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                            $dtpdatospaginas->dtpcategoria    = $categoria;
+                            $dtpdatospaginas->dtpurl          = $productosSubcategoria->url_desktop;
+                            $dtpdatospaginas->dtpstock        = $productosSubcategoria->estado_venta;
+                            $dtpdatospaginas->dtpmarca        = $productosSubcategoria->marcas;
+                            $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
                             $dtpdatospaginas->save(); 
                         }
                         $numeroPaginas = $numeroPaginas + 1;

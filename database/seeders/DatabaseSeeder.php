@@ -18,5 +18,6 @@ class DatabaseSeeder extends Seeder
         $this->call(tpmtiposmonedasSeeder::class);
         $this->call(pagpaginasSeeder::class);
         $this->call(tpatiposauditoriasSeeder::class);
+        $this->call(tputiposusuariosSeeder::class);
     }
 }

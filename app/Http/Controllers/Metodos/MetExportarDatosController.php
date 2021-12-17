@@ -16,10 +16,10 @@ use Illuminate\Http\Request;
 
 class MetExportarDatosController extends Controller
 {
-    public function exportarCompetencias($id)
+    public function MetExportarCompetencias($id)
     {
 
-        $dtp = usuusuarios::where('pagid', $id)->get();
+        $dtp = dtpdatospaginas::where('pagid', $id)->get();
         $meses = array("Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre");
 
         $nuevoArray = array(
@@ -623,7 +623,7 @@ class MetExportarDatosController extends Controller
         ]);
     }
 
-    public function exportarUsuarios($id)
+    public function MetExportarUsuarios($id)
     {
         $usu = usuusuarios::where('empid', $id)->get();
 
@@ -945,7 +945,7 @@ class MetExportarDatosController extends Controller
         ]);
     }
 
-    public function exportarProductosNoHomologados($id)
+    public function MetExportarProductosNoHomologados($id)
     {
         $pro = proproductos::where('empid', $id)->get();
         $meses = array("Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre");

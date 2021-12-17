@@ -26,7 +26,7 @@ class MetUsuariosController extends Controller
         $contrasenia   = $request['contrasenia'];
         $token_adm     = $request->header('token');
 
-        $tpu = tputiposusuarios::where('tpuid', $tpuid)->first(['tpuid']);
+        $tpu = tputiposusuarios::where('tpuid', $tpuid)->first('tpuid');
         $per = perpersonas::where('pernombre',$nombre)
                             ->where('perapellpaterno', $apell_paterno)
                             ->where('perapellmaterno', $apell_materno)
@@ -75,4 +75,102 @@ class MetUsuariosController extends Controller
             'mensaje'   => $mensaje
         ]);
     }
+
+    public function MetEliminarUsuario($usuid)
+    {
+        $respuesta  = false;
+        $mensaje    = '';
+
+        $usud = usuusuarios::where('usuid', $usuid)
+                                    ->delete();
+            
+        if ($usud == 1) {
+            $respuesta = true;
+            $mensaje   = 'Usuario eliminado exitosamente';
+        }
+
+        return response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje
+        ]);
+    }
+
+    public function MetEditarUsuario(Request $request, $usuid)
+    {
+        $respuesta  = false;
+        $mensaje    = '';
+
+        $nombre        = $request['nombre'];
+        $usuario       = $request['usuario'];
+        $apell_paterno = $request['apell_paterno'];
+        $apell_materno = $request['apell_materno'];
+        $tpuid         = $request['tpuid'];
+        $correo        = $request['correo'];
+        $contrasenia   = $request['contrasenia'];
+
+        $perid = usuusuarios::where('usuid',$usuid)->first(['perid']);
+        
+        if ($perid) {
+            $peru = perpersonas::where('perid',$perid->perid)
+                                ->update([
+                                    'pernombrecompleto' => $nombre." ".$apell_paterno." ".$apell_materno,
+                                    'pernombre'         => $nombre,
+                                    'perapellpaterno'   => $apell_paterno,
+                                    'perapellmaterno'   => $apell_materno
+                                ]);
+            if ($peru == 0) {
+                $respuesta = false;
+                $mensaje   = 'No se pudo actualizar los datos personales del usuario';
+            }
+        }
+
+        $usuu = usuusuarios::where('usuid', $usuid)
+                                    ->update([
+                                        'usuusuario'     => $usuario,
+                                        'usucontrasenia' => Hash::make($contrasenia),
+                                        'usucorreo'      => $correo,
+                                        'tpuid'          => $tpuid
+                                    ]);
+        
+        if ($usuu == 1) {
+            $respuesta = true;
+            $mensaje   = 'Se actualizo los datos ingresados del usuario';
+        }else {
+            $respuesta = false;
+            $mensaje   = 'No se pudo actualizar el usuario';
+        }
+
+        return response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje
+        ]);
+    }
+
+    public function MetObtenerListaUsuarios($empid)
+    {
+        $respuesta = false;
+        $mensaje   =  '';
+
+        $usu = usuusuarios::join('tputiposusuarios as tpu', 'tpu.tpuid', 'usuusuarios.tpuid')
+                            ->join('perpersonas as per', 'per.perid', 'usuusuarios.perid')
+                            ->where('usuusuarios.empid', $empid)                                
+                            ->get([
+                                'usuid',
+                                'tpunombre',
+                                'pernombrecompleto',
+                                'usuusuario',
+                                'usucorreo',
+                                'usucontrasenia',
+                                'usuusuarios.created_at'
+                            ]);
+        $respuesta = true;
+        $mensaje   = 'Se obtuvo la lista de usuarios satisfactoriamente';
+
+        return response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje,
+            'datos'     => $usu
+        ]);
+    }
+
 }
