@@ -6,11 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\dtpdatospaginas;
 use App\Models\fecfechas;
 use DateTime;
+use FFI;
 use Goutte\Client;
 
 class MetEtlObtenerDatosPaginasController extends Controller
 {
-       public function validarDataPorFecha($pagid=0, $eliminarData=false)
+       public function validarDataPorFecha($pagid=0, $eliminarData=false, $mercadolibre=false)
     {
         date_default_timezone_set("America/Lima");
         $fecfechaDate = new DateTime();
@@ -30,9 +31,17 @@ class MetEtlObtenerDatosPaginasController extends Controller
         if ($fecfecha) {
             $fecid = $fecfecha->fecid;
             if($eliminarData == true){
-                dtpdatospaginas::where('pagid',$pagid)
+                if ($mercadolibre == true) {
+                    dtpdatospaginas::where('pagid',$pagid)
                                 ->where('fecid',$fecid)
+                                ->where('dtpmercadolibre',$mercadolibre)
                                 ->delete();
+                }else{
+                    dtpdatospaginas::where('pagid',$pagid)
+                    ->where('fecid',$fecid)
+                    ->delete();
+                }
+               
             }
         }else{
             $nuevaFechaActual = new fecfechas();
@@ -249,6 +258,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
     public function MetObtenerArcalauquen(Client $client)
     {
         $pagId = 1;
+        $tpmid = 1;
+        $dtpsigv = true;
         $categoriasLink = array(
             (object)
             [
@@ -302,7 +313,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $tituloCategoria = $crawler->filter("[class='h1 page-title']")->first()->text();
                     $pagina = $i;
 
-                    $crawler->filter(".js-product-miniature-wrapper")->each(function($node) use($pagina, $tituloCategoria, $pagId){
+                    $crawler->filter(".js-product-miniature-wrapper")->each(function($node) use($pagina, $tituloCategoria, $pagId, $tpmid, $dtpsigv){
                         $imagenProducto = $node->filter(".product-thumbnail > img")->attr('data-src');
                         $nombreProducto = $node->filter("[class='h3 product-title']")->text();
                         $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
@@ -313,12 +324,14 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $descProducto = $node->filter(".product-description-short")->text();
                         $stockProducto = $node->filter("[class='product-availability d-block']")->text();
                         $skuProducto = $node->filter("[class='product-reference text-muted']")->text();
-
+                        $ofertaProducto = $node->filter("[class='product-flag on-sale']")->text('Sin oferta');
+            
                         $fecid = $this->validarDataPorFecha(1);
 
                         $dtpdatospaginas = new dtpdatospaginas();
                         $dtpdatospaginas->fecid           = $fecid;
                         $dtpdatospaginas->pagid           = $pagId;
+                        $dtpdatospaginas->tpmid           = $tpmid;
                         $dtpdatospaginas->dtpnombre       = $nombreProducto;
                         $dtpdatospaginas->dtpprecio       = $precioStringFinal;
                         $dtpdatospaginas->dtpurl          = $urlProducto;
@@ -329,6 +342,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->dtpstock        = $stockProducto;
                         $dtpdatospaginas->dtpsku          = $skuProducto;
                         $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
+                        $dtpdatospaginas->dtpsigv        = $dtpsigv;
+                        $dtpdatospaginas->dtpmecanica    = $ofertaProducto;
                         $dtpdatospaginas->save();
                     });
                 }
@@ -339,6 +354,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
     public function MetObtenerTork(Client $client)
     {
         $pagId = 2;
+        $tpmid = 1;
+        $dtpsigv = true;
         $categoriasLink = array(
             (object)
             [
@@ -377,7 +394,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 $paginaURL = $categoriaLink->linkCategoriaProducto;
                 $crawler = $client->request('GET', $paginaURL);
                 $tituloCategoria = $categoriaLink->categoria;
-                $crawler->filter(".product-grid-item")->each(function($node) use($pagId, $tituloCategoria){
+                $crawler->filter(".product-grid-item")->each(function($node) use($pagId, $tituloCategoria, $tpmid, $dtpsigv){
                     $imagenProducto = $node->filter(".lazy-image > img")->attr('data-src');
                     $nombreProducto = $node->filter("[class='h5--accent strong name_wrapper']")->text();
                     $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
@@ -385,18 +402,22 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $precioString = explode("$",$precioProducto);
                     $precioStringFinal = trim($precioString[1]);
                     $urlProducto = $node->filter(".lazy-image")->attr('href');
+                    $stockProducto = $node->filter("[class='sticker sticker--sold']")->text('En stock');
                     
                     $fecid = $this->validarDataPorFecha(2);
                     
                     $dtpdatospaginas = new dtpdatospaginas();
                     $dtpdatospaginas->pagid           = $pagId;
                     $dtpdatospaginas->fecid           = $fecid;
+                    $dtpdatospaginas->tpmid           = $tpmid; 
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
                     $dtpdatospaginas->dtpprecio       = $precioStringFinal;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                     $dtpdatospaginas->dtpurl          = $urlProducto;
                     $dtpdatospaginas->dtpimagen       = $imagenProducto; 
-                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;  
+                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
+                    $dtpdatospaginas->dtpsigv         = $dtpsigv;
+                    $dtpdatospaginas->dtpstock        = $stockProducto;
                     $dtpdatospaginas->save();
                 });
             }
@@ -406,6 +427,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
     public function MetObtenerDipisa(Client $client)
     {
         $pagId = 3;
+        $tpmid = 1;
         $categoriasLink = array(
             (object)
             [
@@ -435,7 +457,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 $crawler = $client->request('GET', $paginaURL);
                 $tituloCategoria = $crawler->filter("[class='col-md-12 text-center']")->first()->text();
 
-                $crawler->filter("[class='col-md-4 mb50']")->each(function($node) use($tituloCategoria, $pagId){
+                $crawler->filter("[class='col-md-4 mb50']")->each(function($node) use($tituloCategoria, $pagId, $tpmid){
                     $imagenProducto = $node->filter(".box-contenido > img")->attr('src');
                     $nombrePrecioProducto = $node->filter("h5")->text();
                     $nombreProducto = explode ("Un.", $nombrePrecioProducto);
@@ -447,12 +469,14 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $skuProducto = $node->filter("p > span")->text();
                     $nombreCompleto = $marcaProducto .' '. $nombreProducto[0];
                     $dtpunidadmedida = $this->obtenerUnidadMedida($nombreCompleto);
+                    $igvProducto = stristr($precioProducto[1],'IVA') ? true : false;
 
                     $fecid = $this->validarDataPorFecha(3);
 
                     $dtpdatospaginas = new dtpdatospaginas();
                     $dtpdatospaginas->pagid           = $pagId;
                     $dtpdatospaginas->fecid           = $fecid;
+                    $dtpdatospaginas->tpmid           = $tpmid;
                     $dtpdatospaginas->dtpnombre       = $nombreCompleto;
                     $dtpdatospaginas->dtpimagen       = $imagenProducto;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
@@ -460,6 +484,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas->dtpsku          = $skuProducto;
                     $dtpdatospaginas->dtpprecio       = $precioStringFinal;
                     $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;  
+                    $dtpdatospaginas->dtpsigv         = $igvProducto;
                     $dtpdatospaginas->save();
                 });
             }
@@ -469,6 +494,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
     public function MetObtenerAvalco(Client $client)
     {
         $pagId = 4;
+        $tpmid = 1;
+        $dtpsigv = true;
         $categoriasLink = array(
             (object)
             [
@@ -553,7 +580,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $tituloCategoria = $crawler->filter("[class='page-heading js-category-page']")->first()->text();
                     $pagina = $i;
                     
-                    $crawler->filter("[class='product-miniature product-style js-product-miniature']")->each(function($node) use($tituloCategoria, $pagina, $pagId){
+                    $crawler->filter("[class='product-miniature product-style js-product-miniature']")->each(function($node) use($tituloCategoria, $pagina, $pagId, $tpmid, $dtpsigv){
                         $imagenProducto = $node->filter(".product-cover-link > img")->attr('src');
                         $nombreProducto = $node->filter(".product-name")->text();
                         $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
@@ -565,12 +592,14 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $skuProducto = explode ("Ref:", $stringSkuProducto);
                         $stockProducto = $node->filter(".available")->text('-');
                         $descProducto = $node->filter(".product-description-short")->text();
-
+                        $descuentoProducto = $node->filter("[class='product-flag discount']")->text('Sin descuento');
+                        
                         $fecid = $this->validarDataPorFecha(4);
 
                         $dtpdatospaginas = new dtpdatospaginas();
                         $dtpdatospaginas->pagid           = $pagId;
-                        $dtpdatospaginas->fecid           = $fecid;
+                        $dtpdatospaginas->fecid           = $fecid;    
+                        $dtpdatospaginas->tpmid           = $tpmid;
                         $dtpdatospaginas->dtpnombre       = $nombreProducto;
                         $dtpdatospaginas->dtpimagen       = $imagenProducto;
                         $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
@@ -580,7 +609,9 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->dtpstock        = $stockProducto;
                         $dtpdatospaginas->dtpsku          = $skuProducto[1];
                         $dtpdatospaginas->dtpdesclarga    = $descProducto;
-                        $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;     
+                        $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
+                        $dtpdatospaginas->dtpsigv         = $dtpsigv;
+                        $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
                         $dtpdatospaginas->save();
                     });
                 }
@@ -592,6 +623,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
     public function MetObtenerDilen(Client $client)
     {
         $pagId = 5;
+        $tpmid = 1;
         $categoriasLink = array(
             (object)
             [
@@ -705,7 +737,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 $crawler = $client->request('GET', $paginaURL);
                 $tituloCategoria = $crawler->filter(".title")->text();
 
-                $crawler->filter(".isotope-item")->each(function($node) use($tituloCategoria, $pagId){
+                $crawler->filter(".isotope-item")->each(function($node) use($tituloCategoria, $pagId, $tpmid){
                     $imagenProducto = $node->filter("[class='scale-with-grid wp-post-image']")->attr('src');
                     $nombreProducto = $node->filter(".desc > h4")->text();
                     $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
@@ -713,18 +745,21 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $precioProducto = $node->filter("[class='woocommerce-Price-amount amount']")->text();
                     $precioString = explode("$",$precioProducto);
                     $precioStringFinal = trim($precioString[1]);
+                    $stockProducto = $node->filter(".soldout")->text("Stock");
 
                     $fecid = $this->validarDataPorFecha(5);
 
                     $dtpdatospaginas = new dtpdatospaginas();
                     $dtpdatospaginas->pagid           = $pagId;
                     $dtpdatospaginas->fecid           = $fecid;
+                    $dtpdatospaginas->tpmid           = $tpmid;
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
                     $dtpdatospaginas->dtpurl          = $urlProducto;
                     $dtpdatospaginas->dtpimagen       = $imagenProducto;
                     $dtpdatospaginas->dtpprecio       = $precioStringFinal;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                     $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
+                    $dtpdatospaginas->dtpstock        = $stockProducto;
                     $dtpdatospaginas->save();
                 });
             }
@@ -734,6 +769,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
     public function MetObtenerSodimac(Client $client)
     {
         $pagId = 6;
+        $tpmid = 1;
         $categoriasLink = array(
             (object)
             [
@@ -817,7 +853,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $tituloCategoria = $crawler->filter("[class='jsx-245626150 category-title']")->text($categoriaLink->categoria);
                     $pagina = $i;
 
-                    $crawler->filter("[class='jsx-411745769 product ie11-product-container']")->each(function($node) use($tituloCategoria, $pagina, $pagId){
+                    $crawler->filter("[class='jsx-411745769 product ie11-product-container']")->each(function($node) use($tituloCategoria, $pagina, $pagId, $tpmid){
                         $imagenProducto = $node->filter("[class='image-contain ie11-image-contain  __lazy']")->attr('data-src');
                         $nombreProducto = $node->filter("[class='jsx-411745769 product-title']")->text();
                         $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
@@ -826,12 +862,15 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $precioProducto = $node->filter("[class='jsx-4135487716']")->text();
                         $precioString = explode("$",$precioProducto);
                         $precioStringFinal = trim($precioString[1]);
-
+                        $stockProducto = $node->filter("[class='jsx-2799553099 withdrawl-info']")->text();
+                        $envioProducto = $node->filter("[class='jsx-2799553099 dispatch-info']")->text();
+                        $ofertaProducto = $node->filter("[class='jsx-585964327 main gridView CMR']")->text('Sin oferta');
                         $fecid = $this->validarDataPorFecha(6);
 
                         $dtpdatospaginas = new dtpdatospaginas();
                         $dtpdatospaginas->pagid           = $pagId;
                         $dtpdatospaginas->fecid           = $fecid;
+                        $dtpdatospaginas->tpmid           = $tpmid;
                         $dtpdatospaginas->dtpnombre       = $nombreProducto;
                         $dtpdatospaginas->dtpurl          = $urlProducto;
                         $dtpdatospaginas->dtpimagen       = $imagenProducto;
@@ -840,6 +879,9 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->dtpmarca        = $marcaProducto;
                         $dtpdatospaginas->dtppagina       = $pagina;
                         $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
+                        $dtpdatospaginas->dtpstock        = $stockProducto;
+                        $dtpdatospaginas->dtpmercadoenvio = $envioProducto;
+                        $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                         $dtpdatospaginas->save();
                     });
                 }
@@ -850,6 +892,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
     public function MetObtenerDpronto(Client $client)
     {
         $pagId = 7;
+        $tpmid = 1;
         $categoriasLink = array(
             (object)
             [
@@ -900,7 +943,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 $crawler = $client->request('GET', $paginaURL);
                 $tituloCategoria = $categoriaLink->categoria;
                 
-                $crawler->filter("[class='product-small box ']")->each(function($node) use($tituloCategoria, $pagId){
+                $crawler->filter("[class='product-small box ']")->each(function($node) use($tituloCategoria, $pagId, $tpmid){
                     $imagenProducto = $node->filter(".image-zoom > a > img")->attr('data-src');
                     $nombreProducto = $node->filter("[class='woocommerce-LoopProduct-link woocommerce-loop-product__link']")->text();
                     $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
@@ -908,18 +951,20 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $precioProducto = $node->filter("[class='woocommerce-Price-amount amount']")->text();
                     $precioString = explode("$",$precioProducto);
                     $precioStringFinal = trim($precioString[1]);
-
+                    $stockProducto = $node->filter("[class='out-of-stock-label']")->text("Stock");
                     $fecid = $this->validarDataPorFecha(7);
 
                     $dtpdatospaginas = new dtpdatospaginas();
                     $dtpdatospaginas->pagid           = $pagId;
                     $dtpdatospaginas->fecid           = $fecid;
+                    $dtpdatospaginas->tpmid           = $tpmid; 
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
                     $dtpdatospaginas->dtpurl          = $urlProducto;
                     $dtpdatospaginas->dtpimagen       = $imagenProducto;
                     $dtpdatospaginas->dtpprecio       = $precioStringFinal;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
-                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
+                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
+                    $dtpdatospaginas->dtpstock        = $stockProducto;
                     $dtpdatospaginas->save();   
                 });
             }
@@ -929,6 +974,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
     public function MetObtenerComcer(Client $client)
     {
         $pagId = 8;
+        $tpmid = 1;
         $categoriasLink = array(
             (object)
             [
@@ -983,26 +1029,34 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 $crawler = $client->request('GET', $paginaURL);
                 $tituloCategoria = $crawler->filter("[class='woocommerce-products-header__title page-title']")->text();
 
-                $crawler->filter(".products > li")->each(function($node) use($tituloCategoria, $pagId){
+                $crawler->filter(".products > li")->each(function($node) use($tituloCategoria, $pagId, $tpmid){
                     $imagenProducto = $node->filter("[class='attachment-woocommerce_thumbnail size-woocommerce_thumbnail']")->attr('src');
                     $nombreProducto = $node->filter("[class='woocommerce-loop-product__title']")->text();
                     $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                     $urlProducto = $node->filter("[class='woocommerce-LoopProduct-link woocommerce-loop-product__link']")->attr('href');
-                    $precioProducto = $node->filter("[class='woocommerce-Price-amount amount']")->text();
+                    $precioProducto = $node->filter("[class='woocommerce-Price-amount amount']")->last()->text();
                     $precioString = explode("$",$precioProducto);
                     $precioStringFinal = trim($precioString[1]);
+                    $descuentoProducto = $node->filter("[class='b_span_text']")->text('No');
+                    if (stristr($descuentoProducto,'%')) {
+                       $descuentoProducto = 'Si';
+                    }
+                    $ofertaProducto = ($descuentoProducto == 'Si') ? '¡En Oferta!' : '¡Sin Oferta!';
 
                     $fecid = $this->validarDataPorFecha(8);
 
                     $dtpdatospaginas = new dtpdatospaginas();
                     $dtpdatospaginas->pagid           = $pagId;
                     $dtpdatospaginas->fecid           = $fecid;
+                    $dtpdatospaginas->tpmid           = $tpmid;
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
                     $dtpdatospaginas->dtpurl          = $urlProducto;
                     $dtpdatospaginas->dtpimagen       = $imagenProducto;
                     $dtpdatospaginas->dtpprecio       = $precioStringFinal;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
-                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
+                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
+                    $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
+                    $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                     $dtpdatospaginas->save();  
                 });
             }
@@ -1012,6 +1066,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
     public function MetObtenerOfimaster(Client $client)
     {
         $pagId = 9;
+        $tpmid = 1;
         $categoriasLink = array(
             (object)
             [
@@ -1108,7 +1163,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $tituloCategoria = $categoriaLink->categoria;
                     $pagina = $i;
                     
-                    $crawler->filter("[class='product-block']")->each(function($node) use($tituloCategoria, $pagina, $pagId){
+                    $crawler->filter("[class='product-block']")->each(function($node) use($tituloCategoria, $pagina, $pagId, $tpmid){
                         $imagenProducto = $node->filter("[class='img-fluid']")->attr('src');
                         $nombreProducto = $node->filter("[class='brand-name trsn']")->text();
                         $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
@@ -1124,6 +1179,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas = new dtpdatospaginas();
                         $dtpdatospaginas->pagid           = $pagId;
                         $dtpdatospaginas->fecid           = $fecid;
+                        $dtpdatospaginas->tpmid           = $tpmid;
                         $dtpdatospaginas->dtpnombre       = $nombreProducto;
                         $dtpdatospaginas->dtpurl          = $urlProducto;
                         $dtpdatospaginas->dtpimagen       = $imagenProducto;
@@ -1141,7 +1197,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
 
     public function MetObtenerDaos(Client $client)
     {
-        $pagId = 10;
+        $pagId = 10;        
+        $tpmid = 1;
         $categoriasLink = array(
             (object)
             [
@@ -1198,7 +1255,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $tituloCategoria = $crawler->filter(".h2")->text();
                     $pagina = $i;
                     
-                    $crawler->filter("[class='thumbnail-container']")->each(function($node) use($tituloCategoria, $pagina, $pagId){
+                    $crawler->filter("[class='thumbnail-container']")->each(function($node) use($tituloCategoria, $pagina, $pagId, $tpmid){
                         $imagenProducto = $node->filter("[class='ttproduct-img1']")->attr('src');
                         $nombreProducto = $node->filter("[class='h3 product-title']")->text();
                         $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
@@ -1211,13 +1268,14 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas = new dtpdatospaginas();
                         $dtpdatospaginas->pagid           = $pagId;
                         $dtpdatospaginas->fecid           = $fecid;
+                        $dtpdatospaginas->tpmid           = $tpmid; 
                         $dtpdatospaginas->dtpnombre       = $nombreProducto;
                         $dtpdatospaginas->dtpurl          = $urlProducto;
                         $dtpdatospaginas->dtpimagen       = $imagenProducto;
                         $dtpdatospaginas->dtpprecio       = $precioStringFinal;
                         $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                         $dtpdatospaginas->dtppagina       = $pagina;
-                        $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
+                        $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
                         $dtpdatospaginas->save();
                     });
                 }
@@ -1228,6 +1286,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
     public function MetObtenerProvit(Client $client)
     {
         $pagId = 11;
+        $tpmid = 1;
         $categoriasLink = array(
             (object)
             [
@@ -1303,7 +1362,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $tituloCategoria = $categoriaLink->categoria;
                     $pagina = $i;
                     
-                    $crawler->filter("[class='grilla']")->each(function($node) use($tituloCategoria, $pagina, $pagId){
+                    $crawler->filter("[class='grilla']")->each(function($node) use($tituloCategoria, $pagina, $pagId, $tpmid){
                         $imagenProducto = $node->filter(".imgGrilla > img")->attr('src');
                         $nombreProducto = $node->filter("[class='nombreGrilla']")->text();
                         $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
@@ -1311,19 +1370,27 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $precioProducto = $node->filter("[class='conDescuento']")->text();
                         $precioString = explode("$",$precioProducto);
                         $precioStringFinal = trim($precioString[1]);
-
+                        $descuentoProducto = $node->filter("[class='etiquetaDctoCantidad']")->text('No');
+                        $descuentoPorcentajeProducto = $node->filter("[class='porcentajeDescuento']")->text('No');
+                        if (stristr($descuentoProducto,'Dcto.') || stristr($descuentoPorcentajeProducto,'%')) {
+                            $descuentoProducto = 'Si';  
+                        }
                         $fecid = $this->validarDataPorFecha(11);
+                        $ofertaProducto = ($descuentoProducto == 'Si') ? '¡En Oferta!' : '¡Sin Oferta';
 
                         $dtpdatospaginas = new dtpdatospaginas();
                         $dtpdatospaginas->pagid           = $pagId;
                         $dtpdatospaginas->fecid           = $fecid;
+                        $dtpdatospaginas->tpmid           = $tpmid;
                         $dtpdatospaginas->dtpnombre       = $nombreProducto;
                         $dtpdatospaginas->dtpurl          = $urlProducto;
                         $dtpdatospaginas->dtpimagen       = $imagenProducto;
                         $dtpdatospaginas->dtpprecio       = $precioStringFinal;
                         $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                         $dtpdatospaginas->dtppagina       = $pagina;
-                        $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
+                        $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
+                        $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
+                        $dtpdatospaginas->dtpmecanica     = $ofertaProducto; 
                         $dtpdatospaginas->save();
                     });
                 }
@@ -1334,6 +1401,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
     public function MetObtenerLimpiamas(Client $client)
     {
         $pagId = 12;
+        $tpmid = 1;
         $categoriasLink = array(
             (object)
             [
@@ -1384,7 +1452,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 $crawler = $client->request('GET', $paginaURL);
                 $tituloCategoria = $crawler->filter(".ui-search-breadcrumb__title")->text();
                 
-                $crawler->filter("[class='ui-search-result__wrapper']")->each(function($node) use($tituloCategoria, $pagId){
+                $crawler->filter("[class='ui-search-result__wrapper']")->each(function($node) use($tituloCategoria, $pagId, $tpmid){
                     $imagenProducto = $node->filter(".slick-slide > img")->attr('src');
                     $nombreProducto = $node->filter("[class='ui-search-item__title']")->text();
                     $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
@@ -1392,26 +1460,31 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $precioProducto = $node->filter("[class='price-tag-amount']")->text();
                     $precioString = explode("$",$precioProducto);
                     $precioStringFinal = trim($precioString[1]);
+                    $envioGratisProducto = $node->filter("[class='ui-search-item__shipping ui-search-item__shipping--free']")->text("Sin envío");
 
                     $fecid = $this->validarDataPorFecha(12);
 
                     $dtpdatospaginas = new dtpdatospaginas();
                     $dtpdatospaginas->pagid           = $pagId;
                     $dtpdatospaginas->fecid           = $fecid;
+                    $dtpdatospaginas->tpmid           = $tpmid;
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
                     $dtpdatospaginas->dtpurl          = $urlProducto;
                     $dtpdatospaginas->dtpimagen       = $imagenProducto;
                     $dtpdatospaginas->dtpprecio       = $precioStringFinal;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
-                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;    
+                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
+                    $dtpdatospaginas->dtpenviogratis  = $envioGratisProducto;
                     $dtpdatospaginas->save();  
                 });
             }
         }
     }
 
-    public function MetObtenerHygiene(Client $client){
+    public function MetObtenerHygiene(Client $client)
+    {
         $pagId = 13;
+        $tpmid = 1;
         $categoriasLink = array(
             (object)
             [
@@ -1528,7 +1601,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 $crawler = $client->request('GET', $paginaURL);
                 $tituloCategoria = $categoriaLink->categoria;
 
-                $crawler->filter(".classic")->each(function($node) use($tituloCategoria, $pagId){
+                $crawler->filter(".classic")->each(function($node) use($tituloCategoria, $pagId, $tpmid){
                     $imagenProducto = $node->filter("[class='attachment-woocommerce_thumbnail size-woocommerce_thumbnail']")->attr('src');
                     $nombreProducto = $node->filter("[class='woocommerce-loop-product__title']")->text();
                     $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
@@ -1543,18 +1616,22 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $precioString2 = explode("+",$precioString[1]);
                         $precioStringFinal = trim($precioString2[0]);
                     }
-                    
+                    $igvProducto = stristr($precioProducto,'IVA') ? true : false;
+                    $ofertaProducto = $node->filter("[class='onsale']")->text('Sin Oferta');
                     $fecid = $this->validarDataPorFecha(13);
 
                     $dtpdatospaginas = new dtpdatospaginas();
                     $dtpdatospaginas->pagid           = $pagId;
                     $dtpdatospaginas->fecid           = $fecid;
+                    $dtpdatospaginas->tpmid           = $tpmid;
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
                     $dtpdatospaginas->dtpurl          = $urlProducto;
                     $dtpdatospaginas->dtpimagen       = $imagenProducto;
                     $dtpdatospaginas->dtpprecio       = $precioStringFinal;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                     $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
+                    $dtpdatospaginas->dtpsigv         = $igvProducto;
+                    $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                     $dtpdatospaginas->save(); 
                 });
             }
@@ -1564,6 +1641,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
     public function MetObtenerCentralMayorista()
     {
         $pagId = 14;
+        $tpmid = 1;
         $url = 'https://deadpool.instaleap.io/api/v2';
         $queryCategorias = array('operationName'=>'getStore','variables'=>['clientId'=>'CENTRAL_MAYORISTA'],'query'=>'query getStore($storeId: ID, $clientId: String) {  getStore(storeId: $storeId, clientId: $clientId) {    id    name    categories {      id      image      slug      name      redirectTo      isAvailableInHome      __typename    }    banners {      id      title      desktopImage      mobileImage      targetCategory      targetUrl {        url        type        __typename      }      __typename    }    __typename  }}');
         $queryCategoriasJson = json_encode($queryCategorias);
@@ -1648,6 +1726,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas = new dtpdatospaginas();
                     $dtpdatospaginas->pagid           = $pagId;
                     $dtpdatospaginas->fecid           = $fecid;
+                    $dtpdatospaginas->tpmid           = $tpmid;
                     $dtpdatospaginas->dtpnombre       = $producto->name;
                     $dtpdatospaginas->dtppagina       = $pagina;
                     $dtpdatospaginas->dtpimagen       = $producto->photosUrls[0];
@@ -1656,7 +1735,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas->dtpsku          = $producto->sku;
                     $dtpdatospaginas->dtpstock        = $producto->stock;
                     $dtpdatospaginas->dtpdesclarga    = $producto->description;
-                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
+                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
+                    $dtpdatospaginas->dtpean          = $producto->ean[0]; 
                     $dtpdatospaginas->save(); 
                 }
             }
@@ -1667,6 +1747,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
     public function MetObtenerCuponatic()
     {
         $pagId = 15;
+        $tpmid = 1;
         $categorias = array('productos','servicios','gastronomia');
         foreach ($categorias as $categoria) {
             $urlCategoria = "https://cl-api.cuponatic-latam.com/api2/cdn/menu/seccion/$categoria?ciudad=Santiago";
@@ -1725,6 +1806,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                                             ->send();
 
                     $productosSubcategorias = $datosSubcategoria->body;
+                    dd($productosSubcategorias);
                     if(sizeof($productosSubcategorias)>0){
                         foreach ($productosSubcategorias as $productosSubcategoria) {
 
@@ -1737,6 +1819,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                             $dtpdatospaginas = new dtpdatospaginas();
                             $dtpdatospaginas->pagid           = $pagId;
                             $dtpdatospaginas->fecid           = $fecid;
+                            $dtpdatospaginas->tpmid           = $tpmid;
                             $dtpdatospaginas->dtpnombre       = $productosSubcategoria->titulo;
                             $dtpdatospaginas->dtppagina       = $numeroPaginas;
                             $dtpdatospaginas->dtpimagen       = $productosSubcategoria->imagen;

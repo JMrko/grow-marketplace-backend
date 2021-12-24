@@ -33,7 +33,7 @@ $router->get('/scrapingHygiene', 'ScraperController@hygiene');
 $router->get('/scrapingMercado', 'ScraperController@mercado');
 $router->get('/scrapingCuponatic', 'ScraperController@cuponatic');
 
-$router->get('/test', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerCuponatic');
+$router->get('/test', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerHygiene');
 
 $router->get('/exportar-competencias/{id}', 'Validaciones\ValExportarDatosController@ValExportarCompetencias');
 $router->get('/exportar-usuarios/{id}', 'Validaciones\ValExportarDatosController@ValExportarUsuarios');
@@ -61,3 +61,8 @@ $router->post('/register','Validaciones\Login\LoginController@ValRegistrarUsuari
 $router->post('/enviar-correo','Validaciones\RecuperarContrasenia\RecuperarContraseniaController@ValEnviarCorreo');
 $router->post('/cambiar-contrasenia','Validaciones\RecuperarContrasenia\RecuperarContraseniaController@ValCambiarContrasenia');
 
+$router->post('/importar-excel-cliente','Validaciones\CargaArchivos\ValCargaArchivosController@ValImportarExcelCliente');
+$router->post('/importar-excel-competencia','Validaciones\CargaArchivos\ValCargaArchivosController@ValImportarExcelCompetencia');
+$router->get('/descargar-fichero-competencia/{nombre_fichero}/{ext_fichero}','Metodos\CargaArchivos\MetCargaArchivosMLCompetenciaController@MetDescargarArchivo');
+
+$router->post('','');

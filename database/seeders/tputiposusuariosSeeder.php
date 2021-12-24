@@ -14,8 +14,16 @@ class tputiposusuariosSeeder extends Seeder
      */
     public function run()
     {
-        $tpu                = new tputiposusuarios();
-        $tpu->tpunombre     = "No definido";
-        $tpu->save();
+        $tpu1 = new tputiposusuarios();
+        $tpu1->tpunombre     = "Administrador";
+        $tpu1->save();
+
+        $tpu2 = new tputiposusuarios();
+        $tpu2->tpunombre     = "Cliente";
+        $tpu2->save();
+
+        $tpu3 = new tputiposusuarios();
+        $tpu3->tpunombre     = "Ejecutivo";
+        $tpu3->save();
     }
 }

@@ -16,13 +16,13 @@ class pagpaginasSeeder extends Seeder
     {
         $pagina1 = new pagpaginas();
         $pagina1->tpmid = 1;
-        $pagina1->pagnombre = "Grupo Arcalauquen";
+        $pagina1->pagnombre = "Arcalauquen";
         $pagina1->paglink = "https://www.arcalauquen.cl/";
         $pagina1->save();
 
         $pagina2 = new pagpaginas();
         $pagina2->tpmid = 1;
-        $pagina2->pagnombre = "Tork al por mayor";
+        $pagina2->pagnombre = "Tork";
         $pagina2->paglink = "https://torkalpormayor.cl/";
         $pagina2->save();
 
@@ -103,5 +103,23 @@ class pagpaginasSeeder extends Seeder
         $pagina15->pagnombre = "Cuponatic";
         $pagina15->paglink = "https://www.cuponatic.com/";
         $pagina15->save();
+
+        $pagina16 = new pagpaginas();
+        $pagina16->tpmid = 1;
+        $pagina16->pagnombre = "Mercado Libre";
+        $pagina16->paglink = "https://www.mercadolibre.cl/";
+        $pagina16->save();
+
+        $pagina17 = new pagpaginas();
+        $pagina17->tpmid = 1;
+        $pagina17->pagnombre = "Softys";
+        $pagina17->paglink = "https://www.softys.com/es/";
+        $pagina17->save();
+
+        $pagina18 = new pagpaginas();
+        $pagina18->tpmid = 1;
+        $pagina18->pagnombre = "PagOtros";
+        $pagina18->paglink = " ";
+        $pagina18->save();
     }
 }
