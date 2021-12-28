@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Metodos\Administrativo\Usuarios\MetUsuariosController;
 use App\Http\Controllers\Validaciones\CustomMessagesController;
 use App\Models\empempresas;
+use App\Models\tputiposusuarios;
 use App\Models\usuusuarios;
 use Illuminate\Http\Request;
 
@@ -13,12 +14,15 @@ class ValUsuariosController extends Controller
 {
     public function ValCrearUsuario(Request $request)
     {
+        $respuesta = false;
+        $mensaje = '';
+
         $mensajes = new CustomMessagesController;
         $customMessages = $mensajes->CustomMensajes();
 
         $rules = [
             'nombre'        => ['required','string'],
-            'usuario'       => ['required','string','unique'],
+            'usuario'       => ['required','string'],
             'apell_paterno' => ['required','string'],
             'apell_materno' => ['required','string'],
             'tpuid'         => ['required'],
@@ -28,12 +32,36 @@ class ValUsuariosController extends Controller
 
         $this->validate($request, $rules, $customMessages);
 
-        $usuc = new MetUsuariosController;
-        return $usuc->MetCrearUsuario($request);
+        $tpuid = $request['tpuid'];
+        $token = $request->header('token');
+
+        $tpu = tputiposusuarios::where('tpuid', $tpuid)->first('tpuid');
+        $usu = usuusuarios::where('usutoken', $token)->first('usuid');
+
+        if ($usu) {
+            if ($tpu) {
+                $usuc = new MetUsuariosController;
+                return $usuc->MetCrearUsuario($request);
+            }else{
+                $respuesta = false;
+                $mensaje = 'Ingrese un ID de tipo de usuario valido';
+            }
+        }else{
+            $respuesta = false;
+            $mensaje = 'Ingrese un token valido';
+        }
+
+        return response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje
+        ]);
     }
 
     public function ValEditarUsuario(Request $request, $usuid)
     {
+        $respuesta = false;
+        $mensaje = '';
+
         $mensajes = new CustomMessagesController;
         $customMessages = $mensajes->CustomMensajes();
 
@@ -49,32 +77,58 @@ class ValUsuariosController extends Controller
         
         $this->validate($request, $rules, $customMessages);
         
+        $token = $request->header('token');
+
+        $usu_token = usuusuarios::where('usutoken', $token)->first('usuid');
         $usu = usuusuarios::where('usuid', $usuid)->first('usuid');
 
-        if ($usu) {
-            $usuu = new MetUsuariosController;
-            return $usuu->MetEditarUsuario($request, $usuid);
+        if ($usu_token) {
+            if ($usu) {
+                $usuu = new MetUsuariosController;
+                return $usuu->MetEditarUsuario($request, $usuid);
+            }else{
+                $respuesta = false;
+                $mensaje = 'Ingrese un ID de usuario valido';
+            }
         }else{
-            return response()->json([
-                'respuesta' => false,
-                'mensaje'   => 'Ingrese un ID de usuario válido'
-            ]);
+            $respuesta = false;
+            $mensaje = 'Ingrese un token de usuario valido';
         }
+        
+        return response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje
+        ]);
     }
 
-    public function ValEliminarUsuario($usuid)
+    public function ValEliminarUsuario(Request $request, $usuid)
     {
+        $respuesta = false;
+        $mensaje = '';
+
+        $token = $request->header('token');
+
+        $usu_token = usuusuarios::where('usutoken', $token)->first('usutoken');
         $usu = usuusuarios::where('usuid', $usuid)->first('usuid');
 
-        if ($usu) {
-            $usud = new MetUsuariosController;
-            return $usud->MetEliminarUsuario($usuid);
+        if ($usu_token) {
+            if ($usu) {
+                $usud = new MetUsuariosController;
+                return $usud->MetEliminarUsuario($request, $usuid);
+            }else{
+               $respuesta = false;
+               $mensaje = 'Ingrese un ID de usuario valido';
+            }
         }else{
-            return response()->json([
-                'respuesta' => false,
-                'mensaje'   => 'Ingrese un ID de usuario válido'
-            ]);
+            $respuesta = false;
+            $mensaje = 'Ingrese un token valido';
         }
+
+        return response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje
+        ]);
+        
     }
 
     public function ValListarUsuarios($empid)

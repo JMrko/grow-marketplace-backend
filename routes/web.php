@@ -63,6 +63,7 @@ $router->post('/cambiar-contrasenia','Validaciones\RecuperarContrasenia\Recupera
 
 $router->post('/importar-excel-cliente','Validaciones\CargaArchivos\ValCargaArchivosController@ValImportarExcelCliente');
 $router->post('/importar-excel-competencia','Validaciones\CargaArchivos\ValCargaArchivosController@ValImportarExcelCompetencia');
-$router->get('/descargar-fichero-competencia/{nombre_fichero}/{ext_fichero}','Metodos\CargaArchivos\MetCargaArchivosMLCompetenciaController@MetDescargarArchivo');
+$router->get('/descargar-fichero-competencia/{nombre_fichero}','Metodos\CargaArchivos\MetCargaArchivosMLCompetenciaController@MetDescargarArchivo');
 
-$router->post('','');
+$router->post('/crear-favorito','Validaciones\Favoritos\ValFavoritosController@ValCrearFavoritos');
+$router->delete('/eliminar-favorito/{favid}','Validaciones\Favoritos\ValFavoritosController@ValEliminarFavoritos');

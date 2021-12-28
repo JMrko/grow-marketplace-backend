@@ -20,7 +20,7 @@ class MetLoginController extends Controller
         $usutoken = "";
         $persona_id = "";
         $tpaid = 1;
-        $audtabla= "";
+        $audtabla= "usuusuarios";
         $audlog = "";
 
         $usuario       = $request['usuario'];
@@ -84,7 +84,7 @@ class MetLoginController extends Controller
             'mensaje'   => $mensaje
         ]);
 
-        if ($respuesta == true && $mensaje == "Usuario registrado correctamente") {
+        if ($respuesta == true) {
             $AuditoriaController = new AuditoriaController;
             $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
                 $usutoken,
@@ -124,7 +124,7 @@ class MetLoginController extends Controller
         $tpaid     = 4;
         $audlog    = "";
         $audpk     = "";
-        $audtabla  = "";
+        $audtabla  = "usuusuarios";
 
         $usuario = $request['usuario'];
         $contrasenia = $request['contrasenia'];
@@ -187,7 +187,7 @@ class MetLoginController extends Controller
             'token'     => $usutoken
         ]);
 
-        if ($respuesta == true && $mensaje == "Bienvenido, ".$usuario." es un gusto volver a verte por aquí") {
+        if ($respuesta == true) {
             $AuditoriaController = new AuditoriaController;
             $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
                 $usutoken,

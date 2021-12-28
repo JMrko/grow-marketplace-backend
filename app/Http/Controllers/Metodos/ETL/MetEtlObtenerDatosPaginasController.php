@@ -342,8 +342,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->dtpstock        = $stockProducto;
                         $dtpdatospaginas->dtpsku          = $skuProducto;
                         $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
-                        $dtpdatospaginas->dtpsigv        = $dtpsigv;
-                        $dtpdatospaginas->dtpmecanica    = $ofertaProducto;
+                        $dtpdatospaginas->dtpsigv         = $dtpsigv;
+                        $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                         $dtpdatospaginas->save();
                     });
                 }

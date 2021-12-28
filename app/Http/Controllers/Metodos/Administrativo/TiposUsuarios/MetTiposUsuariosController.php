@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Metodos\Administrativo\TiposUsuarios;
 
+use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Controller;
 use App\Models\tputiposusuarios;
 use App\Models\usuusuarios;
@@ -13,7 +14,10 @@ class MetTiposUsuariosController extends Controller
     {
         $respuesta  = false;
         $mensaje    = '';
-
+        $tpaid      = 1;
+        $audlog     = '';
+        $audtabla   = 'tputiposusuarios';
+        
         $nombre     = $request['nombre'];
         $privilegio = $request['privilegio'];
         $token_adm  = $request->header('token');
@@ -26,6 +30,7 @@ class MetTiposUsuariosController extends Controller
             $tipo->tpunombre = $nombre;
             $tipo->tpuprivilegio = $privilegio;
             if ($tipo->save()) {
+                $audpk = $tipo->tpuid;
                 $respuesta = true;
                 $mensaje   = 'Tipo de usuario registrado exitosamente';
             }
@@ -34,21 +39,56 @@ class MetTiposUsuariosController extends Controller
             $mensaje   = 'Ingrese un token de Administrador válido';
         }
         
+        $requestSalida = response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje
+        ]);
+
+        if ($respuesta == true) {
+            $AuditoriaController = new AuditoriaController;
+            $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
+                $token_adm,
+                null,
+                $tpaid,
+                null,
+                $request,
+                $requestSalida,
+                'Crear Tipo Usuario',
+                'CREAR',
+                '/crear-tipo-usuario', 
+                $audlog,
+                $audpk,
+                $audtabla
+            );
+            if ($registrarAuditoria == true) {
+                $respuesta = true;
+                $mensaje = 'Crear tipo usuario y registro de auditoria exitoso';
+            }else{
+                $respuesta = false;
+                $mensaje = 'Error al registrar auditoria';
+            }
+        }
+
         return response()->json([
             'respuesta' => $respuesta,
             'mensaje'   => $mensaje
         ]);
     }
 
-    public function MetEliminarTipoUsuario($tpuid)
+    public function MetEliminarTipoUsuario(Request $request, $tpuid)
     {
         $respuesta  = false;
         $mensaje    = '';
+        $tpaid      = 3;
+        $audlog     = '';
+        $audtabla   = 'tputiposusuarios';
+        $audpk      = '';
 
+        $token = $request->header('token');
         $usu = usuusuarios::where('tpuid', $tpuid)
                             ->update(['tpuid' => '1']);
-        
-        if ($usu == 1) {
+                            
+        if ($usu == 1 || $usu == 0) {
             $tpud = tputiposusuarios::where('tpuid', $tpuid)
                                         ->delete();
 
@@ -61,6 +101,36 @@ class MetTiposUsuariosController extends Controller
             $mensaje   = 'No se pudo el tipo de usuario';
         }
 
+        $requestSalida = response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje
+        ]);
+
+        if ($respuesta == true) {
+            $AuditoriaController = new AuditoriaController;
+            $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
+                $token,
+                null,
+                $tpaid,
+                null,
+                $request,
+                $requestSalida,
+                'Eliminar Tipo de Usuario',
+                'ELIMINAR',
+                '/eliminar-tipo-usuario/{tpuid}', 
+                $audlog,
+                $audpk,
+                $audtabla
+            );
+            if ($registrarAuditoria == true) {
+                $respuesta = true;
+                $mensaje = 'Eliminar tipo de usuario y registro de auditoria exitoso';
+            }else{
+                $respuesta = false;
+                $mensaje = 'Error al registrar auditoria';
+            }
+        }
+
         return response()->json([
             'respuesta' => $respuesta,
             'mensaje'   => $mensaje
@@ -71,8 +141,12 @@ class MetTiposUsuariosController extends Controller
     {
         $respuesta  = false;
         $mensaje    = '';
+        $tpaid      = 2;
+        $audlog     = '';
+        $audtabla   = 'tputiposusuarios';
 
         $nombre     = $request['nombre'];
+        $token      = $request->header('token');
 
         $tpuu = tputiposusuarios::where('tpuid', $tpuid)
                                     ->update(['tpunombre' => $nombre]);
@@ -83,6 +157,36 @@ class MetTiposUsuariosController extends Controller
         }else {
             $respuesta = false;
             $mensaje   = 'No se pudo actualizar el tipo de usuario';
+        }
+
+        $requestSalida = response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje
+        ]);
+
+        if ($respuesta == true) {
+            $AuditoriaController = new AuditoriaController;
+            $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
+                $token,
+                null,
+                $tpaid,
+                null,
+                $request,
+                $requestSalida,
+                'Editar Tipo de Usuario',
+                'EDITAR',
+                '/editar-tipo-usuario/{tpuid}', 
+                $audlog,
+                $tpuid,
+                $audtabla
+            );
+            if ($registrarAuditoria == true) {
+                $respuesta = true;
+                $mensaje = 'Editar tipo usuario y registro de auditoria exitoso';
+            }else{
+                $respuesta = false;
+                $mensaje = 'Error al registrar auditoria';
+            }
         }
 
         return response()->json([

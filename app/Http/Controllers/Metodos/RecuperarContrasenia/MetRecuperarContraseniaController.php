@@ -43,7 +43,7 @@ class MetRecuperarContraseniaController extends Controller
         $tpaid = 5;
         $audlog    = "";
         $audpk     = "";
-        $audtabla  = "";
+        $audtabla  = "usuusuarios";
 
         $contraseniaNueva = $request['contrasenia'];
         $token            = $request->header('token');
@@ -66,7 +66,7 @@ class MetRecuperarContraseniaController extends Controller
             'mensaje'   => $mensaje
         ]);
 
-        if ($respuesta == true && $mensaje == "Su contraseña fue actualizada correctamente") {
+        if ($respuesta == true) {
             $AuditoriaController = new AuditoriaController;
             $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
                 $token,

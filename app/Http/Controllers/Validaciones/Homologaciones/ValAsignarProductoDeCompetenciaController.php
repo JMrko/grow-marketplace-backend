@@ -8,6 +8,7 @@ use App\Models\dtpdatospaginas;
 use App\Models\empempresas;
 use App\Models\pagpaginas;
 use App\Models\proproductos;
+use App\Models\usuusuarios;
 use Illuminate\Http\Request;
 
 class ValAsignarProductoDeCompetenciaController extends Controller
@@ -42,26 +43,39 @@ class ValAsignarProductoDeCompetenciaController extends Controller
         }
     }
 
-    public function ValAsignacionProductoCompetencia($dtpid, $proid)
+    public function ValAsignacionProductoCompetencia(Request $request, $dtpid, $proid)
     {
+        $respuesta = false;
+        $mensaje = '';
+
+        $token = $request->header('token');
+        $usu = usuusuarios::where('usutoken', $token)->first('usutoken');
+
         $dtp = dtpdatospaginas::where('dtpid', $dtpid)->first('dtpid');
         $pro = proproductos::where('proid', $proid)->first('proid');
         
-        if ($dtp) {
-            if ($pro) {
-                $asig = new MetAsignarProductoDeCompetenciaController;
-                return $asig->MetAsignacionProductoCompetencia($dtpid, $proid);
+        if ($usu) {
+            if ($dtp) {
+                if ($pro) {
+                    $asig = new MetAsignarProductoDeCompetenciaController;
+                    return $asig->MetAsignacionProductoCompetencia($request, $dtpid, $proid);
+                }else{
+                    $respuesta = false;
+                    $mensaje = 'Ingrese un ID de producto válido';
+                }
             }else{
-                return response()->json([
-                    'respuesta' => false,
-                    'mensaje'   => 'Ingrese un ID de producto válido'
-                ]);
+                $respuesta = false;
+                $mensaje = 'Ingrese un ID de datos de página válida';
             }
         }else{
-            return response()->json([
-                'respuesta' => false,
-                'mensaje'   => 'Ingrese un ID de datos de página válida'
-            ]);
+            $respuesta = false;
+            $mensaje = 'Ingrese un token valido';
         }
+        
+
+        return response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje
+        ]);
     }
 }

@@ -15,8 +15,8 @@ class Proproductos extends Migration
     {
         Schema::create('proproductos', function (Blueprint $table) {
             $table->increments('proid');
-            $table->unsignedInteger('catid');
-            $table->unsignedInteger('empid');
+            $table->unsignedInteger('catid')->nullable();//--
+            $table->unsignedInteger('empid')->nullable();//--
             $table->unsignedInteger('tpmid');
             $table->string('pronombre', 150);
             $table->decimal('proprecio', 15, 8); //debe aceptar 8 decimales

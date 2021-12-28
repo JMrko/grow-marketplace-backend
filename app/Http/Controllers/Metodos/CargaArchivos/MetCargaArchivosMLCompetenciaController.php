@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Metodos\CargaArchivos;
 
+use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Metodos\ETL\MetEtlObtenerDatosPaginasController;
 use App\Mail\CargaArchivosMail;
@@ -23,18 +24,24 @@ class MetCargaArchivosMLCompetenciaController extends Controller
         $tpmid = 1;
         $tipo_fichero = 'Productos de Mercado Libre Competencia';
         $tcaid = 1;
-        $empid = 1;
+        $carexito = true;
+        $tpaid = 1;
+        $audlog = '';
+        $audtabla = 'carcargasarchivos';
+        $audpk = '';
 
         $token  = $request->header('token');
         $fichero_subido = $request->file('archivo');
         $nombre_fichero = $fichero_subido->getClientOriginalName();
         $extension_fichero = $fichero_subido->getClientOriginalExtension();
-        $url_fichero = "http://127.0.0.1:8000/descargar-fichero-competencia/$nombre_fichero.$extension_fichero";
+        $url_fichero = "http://127.0.0.1:8000/descargar-fichero-competencia/".$nombre_fichero;
 
         $usu = usuusuarios::where('usutoken', $token)
                                 ->first([
+                                    'usuid',
                                     'usuusuario',
-                                    'usucorreo'    
+                                    'usucorreo',
+                                    'empid'    
                                 ]);
         
         $data = [
@@ -110,17 +117,7 @@ class MetCargaArchivosMLCompetenciaController extends Controller
                 $dtpdatospaginas->dtpcondicion            = $ex_dtpcondicion;
                 $dtpdatospaginas->dtpmercadolibre         = $dtpmercadolibre;
 
-                $carcargasarchivos = new carcargasarchivos();
-                $carcargasarchivos->usuid                 = $usu->usuid;
-                $carcargasarchivos->tcaid                 = $tcaid;
-                $carcargasarchivos->fecid                 = $fecid;
-                $carcargasarchivos->empid                 = $empid;
-                $carcargasarchivos->carnombre             = $nombre_fichero;
-                $carcargasarchivos->carextension          = $extension_fichero;
-                $carcargasarchivos->carurl                = $url_fichero;
-                $carcargasarchivos->carexito              = true;
-
-                if ($dtpdatospaginas->save() && $carcargasarchivos->save()) {
+                if ($dtpdatospaginas->save()) {
                     $respuesta = true;
                     $mensaje = 'Se almaceno la data correctamente';
                 }else{
@@ -129,20 +126,66 @@ class MetCargaArchivosMLCompetenciaController extends Controller
                 }
             }
             if ($respuesta == true) {
+                $carcargasarchivos = new carcargasarchivos();
+                $carcargasarchivos->usuid                 = $usu->usuid;
+                $carcargasarchivos->tcaid                 = $tcaid;
+                $carcargasarchivos->fecid                 = $fecid;
+                $carcargasarchivos->empid                 = $usu->empid;
+                $carcargasarchivos->carnombre             = $nombre_fichero;
+                $carcargasarchivos->carextension          = $extension_fichero;
+                $carcargasarchivos->carurl                = $url_fichero;
+                $carcargasarchivos->carexito              = $carexito;
 
-                Mail::to($usu->usucorreo)->send(new CargaArchivosMail($data));
-                $request->file('archivo')->move('CargaArchivos/Competencia', $nombre_fichero);
-
+                if ($carcargasarchivos->save()) {
+                    Mail::to($usu->usucorreo)->send(new CargaArchivosMail($data));
+                    $request->file('archivo')->move('CargaArchivos/Competencia', $nombre_fichero);
+                    $respuesta = true;
+                    $mensaje = 'Se almaceno la data carga archivos correctamente';
+                }else{
+                    $respuesta = false;
+                    $mensaje = 'Surgio un error al guardar la data carga archivos';
+                }
             }
         }
+
+        $requestSalida = response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje
+        ]);
+
+        if ($respuesta == true) {//false
+            $AuditoriaController = new AuditoriaController;
+            $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
+                $token,
+                $usu->usuid,
+                $tpaid,
+                null,
+                $request,
+                $requestSalida,
+                'Carga masiva de data de archivo Excel de la competencia',
+                'CARGAR DATA',
+                '/importar-excel-competencia', 
+                $audlog,
+                $audpk,
+                $audtabla
+            );
+            if ($registrarAuditoria == true) {
+                $respuesta = true;
+                $mensaje = 'Carga de datos y registro de auditoria correctamente';
+            }else{
+                $respuesta = false;
+                $mensaje = 'Error al registrar auditoria';
+            }
+        }
+
         return response()->json([
             'respuesta' => $respuesta,
             'mensaje'   => $mensaje
         ]);
     }
 
-    public function MetDescargarArchivo($nombre_fichero, $ext_fichero)
+    public function MetDescargarArchivo($nombre_fichero)
     {
-        return response()->download("CargaArchivos/Competencia/$nombre_fichero.$ext_fichero");
+        return response()->download("CargaArchivos/Competencia/$nombre_fichero");
     }
 }

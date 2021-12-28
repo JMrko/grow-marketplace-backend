@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Metodos\Administrativo\Usuarios;
 
+use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Controller;
 use App\Models\perpersonas;
 use App\Models\tputiposusuarios;
@@ -16,6 +17,10 @@ class MetUsuariosController extends Controller
     {
         $respuesta  = false;
         $mensaje    = '';
+        $tpaid      = 1;
+        $audlog     = '';
+        $audtabla   = 'usuusuarios';
+        $audpk      = '';
 
         $nombre        = $request['nombre'];
         $usuario       = $request['usuario'];
@@ -47,15 +52,8 @@ class MetUsuariosController extends Controller
                 $persona_id = null;
             }
         }
-        if (!$tpu) {
-            $respuesta = false;
-            $mensaje = 'No existe el ID del tipo de usuario ingresado';
-        }
-        if (!$token_adm) {
-            $respuesta = false;
-            $mensaje = 'Ingrese un token válido';
-        }
-        if ($tpu && $per && $usu_empid) {
+
+        if ($persona_id && $usu_empid) {
             $usutoken = Str::random(60);
             $usuc = new usuusuarios();
             $usuc->usuusuario     = $usuario;
@@ -66,20 +64,61 @@ class MetUsuariosController extends Controller
             $usuc->usutoken       = $usutoken;
             $usuc->usucorreo      = $correo;
             if($usuc->save()){
+                $audpk = $usuc->usuid;
                 $respuesta = true;
                 $mensaje = 'Usuario registrado correctamente';
+            }else{
+                $respuesta = false;
+                $mensaje = 'Error al registrar usuario';
             }
         }
+        
+        $requestSalida = response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje
+        ]);
+
+        if ($respuesta == true) {
+            $AuditoriaController = new AuditoriaController;
+            $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
+                $token_adm,
+                null,
+                $tpaid,
+                null,
+                $request,
+                $requestSalida,
+                'Crear usuario',
+                'CREAR',
+                '/crear-usuario', 
+                $audlog,
+                $audpk,
+                $audtabla
+            );
+            if ($registrarAuditoria == true) {
+                $respuesta = true;
+                $mensaje = 'Crear usuario y registro de auditoria exitoso';
+            }else{
+                $respuesta = false;
+                $mensaje = 'Error al registrar auditoria';
+            }
+        }
+
         return response()->json([
             'respuesta' => $respuesta,
             'mensaje'   => $mensaje
         ]);
     }
 
-    public function MetEliminarUsuario($usuid)
+    public function MetEliminarUsuario(Request $request, $usuid)
     {
         $respuesta  = false;
         $mensaje    = '';
+        $tpaid      = 3;
+        $audtabla   = 'usuusuarios';
+        $audlog     = '';
+        $audpk      = '';
+
+        $token = $request->header('token');
 
         $usud = usuusuarios::where('usuid', $usuid)
                                     ->delete();
@@ -87,6 +126,36 @@ class MetUsuariosController extends Controller
         if ($usud == 1) {
             $respuesta = true;
             $mensaje   = 'Usuario eliminado exitosamente';
+        }
+
+        $requestSalida = response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje
+        ]);
+
+        if ($respuesta == true) {
+            $AuditoriaController = new AuditoriaController;
+            $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
+                $token,
+                null,
+                $tpaid,
+                null,
+                $request,
+                $requestSalida,
+                'Eliminar usuario',
+                'ELIMINAR',
+                '/eliminar-usuario/{usuid}', 
+                $audlog,
+                $audpk,
+                $audtabla
+            );
+            if ($registrarAuditoria == true) {
+                $respuesta = true;
+                $mensaje = 'Eliminar usuario y registro de auditoria exitoso';
+            }else{
+                $respuesta = false;
+                $mensaje = 'Error al registrar auditoria';
+            }
         }
 
         return response()->json([
@@ -99,6 +168,10 @@ class MetUsuariosController extends Controller
     {
         $respuesta  = false;
         $mensaje    = '';
+        $tpaid      = 2;
+        $audlog     = '';
+        $audtabla   = 'usuusuarios';
+
 
         $nombre        = $request['nombre'];
         $usuario       = $request['usuario'];
@@ -107,7 +180,8 @@ class MetUsuariosController extends Controller
         $tpuid         = $request['tpuid'];
         $correo        = $request['correo'];
         $contrasenia   = $request['contrasenia'];
-
+        $token         = $request->header('token');
+        
         $perid = usuusuarios::where('usuid',$usuid)->first(['perid']);
         
         if ($perid) {
@@ -138,6 +212,36 @@ class MetUsuariosController extends Controller
         }else {
             $respuesta = false;
             $mensaje   = 'No se pudo actualizar el usuario';
+        }
+
+        $requestSalida = response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje
+        ]);
+
+        if ($respuesta == true) {
+            $AuditoriaController = new AuditoriaController;
+            $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
+                $token,
+                null,
+                $tpaid,
+                null,
+                $request,
+                $requestSalida,
+                'Editar usuario',
+                'EDITAR',
+                '/editar-usuario/{usuid}', 
+                $audlog,
+                $usuid,
+                $audtabla
+            );
+            if ($registrarAuditoria == true) {
+                $respuesta = true;
+                $mensaje = 'Editar usuario y registro de auditoria exitoso';
+            }else{
+                $respuesta = false;
+                $mensaje = 'Error al registrar auditoria';
+            }
         }
 
         return response()->json([

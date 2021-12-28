@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Metodos\CargaArchivos;
 
+use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Metodos\ETL\MetEtlObtenerDatosPaginasController;
 use App\Mail\CargaArchivosMail;
+use App\Models\carcargasarchivos;
 use App\Models\dtpdatospaginas;
 use App\Models\usuusuarios;
 use Illuminate\Http\Request;
@@ -21,19 +23,31 @@ class MetCargaArchivosMLClienteController extends Controller
         $dtpmercadolibre = false;
         $tpmid = 1;
         $tipo_fichero = 'Productos de Mercado Libre Cliente';
- 
+        $tcaid = 1;
+        $carexito = true;
+        $tpaid = 1;
+        $audlog = '';
+        $audtabla = 'carcargasarchivos';
+        $audpk = '';
+
         $token  = $request->header('token');
         $fichero_subido = $request->file('archivo');
         $nombre_fichero = $fichero_subido->getClientOriginalName();
+        $extension_fichero = $fichero_subido->getClientOriginalExtension();
+        $url_fichero = "http://127.0.0.1:8000/descargar-fichero-competencia/".$nombre_fichero."/".$extension_fichero;
+
         $usu = usuusuarios::where('usutoken', $token)
                                 ->first([
+                                    'usuid',
                                     'usuusuario',
-                                    'usucorreo'    
+                                    'usucorreo',
+                                    'empid'  
                                 ]);
         $data = [
-            'usuario' => $usu->usuusuario, 
-            'archivo' => $nombre_fichero,
-            'tipo'    => $tipo_fichero
+            'usuario'     => $usu->usuusuario, 
+            'archivo'     => $nombre_fichero,
+            'tipo'        => $tipo_fichero,
+            'url_archivo' => $url_fichero
         ];
 
         $objPHPExcel    = IOFactory::load($fichero_subido);
@@ -100,6 +114,7 @@ class MetCargaArchivosMLClienteController extends Controller
                 $dtpdatospaginas->dtpventasenunidxperiodo          = $ex_dtpventasenunidxperiodo;
                 $dtpdatospaginas->dtpconversionxperiodo            = $ex_dtpconversionxperiodo;
                 $dtpdatospaginas->dtpmercadolibre                  = $dtpmercadolibre;
+                
                 if ($dtpdatospaginas->save()) {
                     $respuesta = true;
                     $mensaje = 'Se almaceno la data correctamente';
@@ -109,9 +124,58 @@ class MetCargaArchivosMLClienteController extends Controller
                 }
             }
             if ($respuesta == true) {
-                Mail::to($usu->usucorreo)->send(new CargaArchivosMail($data));
+                $carcargasarchivos = new carcargasarchivos();
+                $carcargasarchivos->usuid                 = $usu->usuid;
+                $carcargasarchivos->tcaid                 = $tcaid;
+                $carcargasarchivos->fecid                 = $fecid;
+                $carcargasarchivos->empid                 = $usu->empid;
+                $carcargasarchivos->carnombre             = $nombre_fichero;
+                $carcargasarchivos->carextension          = $extension_fichero;
+                $carcargasarchivos->carurl                = $url_fichero;
+                $carcargasarchivos->carexito              = $carexito;
+
+                if ($carcargasarchivos->save()) {
+                    Mail::to($usu->usucorreo)->send(new CargaArchivosMail($data));
+                    $request->file('archivo')->move('CargaArchivos/Cliente', $nombre_fichero);
+                    $respuesta = true;
+                    $mensaje = 'Se almaceno la data carga archivos correctamente';
+                    // $url_fichero = "http://127.0.0.1:8000/CargaArchivos/Cliente/$nombre_fichero.$extension_fichero";
+                }else{
+                    $respuesta = false;
+                    $mensaje = 'Surgio un error al guardar la data carga archivos';
+                }
             }
         }
+        $requestSalida = response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje
+        ]);
+
+        if ($respuesta == true || $respuesta == false) {
+            $AuditoriaController = new AuditoriaController;
+            $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
+                $token,
+                $usu->usuid,
+                $tpaid,
+                null,
+                $request,
+                $requestSalida,
+                'Carga masiva de data de archivo Excel del cliente',
+                'CARGAR DATA',
+                '/importar-excel-cliente', 
+                $audlog,
+                $audpk,
+                $audtabla
+            );
+            if ($registrarAuditoria == true) {
+                $respuesta = true;
+                $mensaje = 'Carga de datos y registro de auditoria correctamente';
+            }else{
+                $respuesta = false;
+                $mensaje = 'Error al registrar auditoria';
+            }
+        }
+
         return response()->json([
             'respuesta' => $respuesta,
             'mensaje'   => $mensaje

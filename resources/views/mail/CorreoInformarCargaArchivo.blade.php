@@ -56,8 +56,8 @@
                                 <b>Nombre del Archivo:</b> 
                                 
                                 <a 
-                                    {{-- href="{{$url_archivo}}" --}}
-                                    href="--"
+                                    href="{{$url_archivo}}"
+                                    {{-- href="--" --}}
                                 >{{$archivo}}</a>
                                 
                             </div>

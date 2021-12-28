@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Metodos\Homologaciones;
 
+use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Controller;
 use App\Models\dtpdatospaginas;
 use App\Models\pdpproductosdatospaginas;
 use App\Models\proproductos;
+use App\Models\usuusuarios;
 use Illuminate\Http\Request;
 
 class MetAsignarProductoDeCompetenciaController extends Controller
@@ -57,11 +59,19 @@ class MetAsignarProductoDeCompetenciaController extends Controller
         ]);
     }
 
-    public function MetAsignacionProductoCompetencia($dtpid,$proid)
+    public function MetAsignacionProductoCompetencia(Request $request, $dtpid, $proid)
     {
         $respuesta = false;
         $mensaje   =  '';
+        $tpaid = 2;
+        $audlog = '';
+        $audtabla = 'dtpdatospaginas';
 
+        $token      = $request->header('token');
+
+        $usu = usuusuarios::where('usutoken', $token)
+                            ->first('usuid');
+                            
         $pro = proproductos::where('proid',$proid)
                                 ->first([
                                     'prosku',
@@ -77,9 +87,9 @@ class MetAsignarProductoDeCompetenciaController extends Controller
         $pdpc->proid = $proid;
         $pdpc->dtpid = $dtpid;
         $pdpc->empid = $pro->empid;
-        $pdpc->save();
+        // $pdpc->save();
         
-        if ($dtpu == 1) {
+        if ($dtpu == 1 && $pdpc->save()) {
             $dtp = dtpdatospaginas::join('pagpaginas as pag','pag.pagid','dtpdatospaginas.pagid')
                                     ->where('dtpid',$dtpid) 
                                     ->get([
@@ -99,10 +109,40 @@ class MetAsignarProductoDeCompetenciaController extends Controller
             $mensaje   = 'Error al actualizar SKU';
         }
 
-        return response()->json([
+        $requestSalida = response()->json([
             'respuesta' => $respuesta,
             'mensaje'   => $mensaje,
             'datos'     => $dtp
+        ]);
+
+        if ($respuesta == true) {
+            $AuditoriaController = new AuditoriaController;
+            $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
+                $token,
+                $usu->usuid,
+                $tpaid,
+                null,
+                $request,
+                $requestSalida,
+                'Asignacion de producto-cliente a producto de competencia',
+                'EDITAR',
+                '/asignar-sku/{dtpid}/{proid}', 
+                $audlog,
+                $dtpid,
+                $audtabla
+            );
+            if ($registrarAuditoria == true) {
+                $respuesta = true;
+                $mensaje = 'Asignacion de producto-cliente y registro de auditoria exitoso';
+            }else{
+                $respuesta = false;
+                $mensaje = 'Error al registrar auditoria';
+            }
+        }
+
+        return response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje
         ]);
     }
 }
