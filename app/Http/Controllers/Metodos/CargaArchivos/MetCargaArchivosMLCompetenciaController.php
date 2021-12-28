@@ -186,6 +186,6 @@ class MetCargaArchivosMLCompetenciaController extends Controller
 
     public function MetDescargarArchivo($nombre_fichero)
     {
-        return response()->download("CargaArchivos/Competencia/$nombre_fichero");
+        return response()->download("CargaArchivos/Competencia/".$nombre_fichero);
     }
 }
