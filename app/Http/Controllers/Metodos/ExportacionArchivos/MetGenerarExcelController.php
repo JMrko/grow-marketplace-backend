@@ -320,9 +320,17 @@ class MetGenerarExcelController extends Controller
         $hoja->getStyle('C64:C68')->getBorders()->getLeft()->setBorderStyle(Border::BORDER_THIN);
         $hoja->getStyle('H64:H68')->getBorders()->getRight()->setBorderStyle(Border::BORDER_THIN);
 
-        $worksheet1 = $documento->createSheet();
-            $worksheet1->setTitle('Another sheet')
-                        ->getTabColor()->setRGB('FF0000');
+        //Creacion de otra hoja
+        $worksheet2 = $documento->createSheet();
+        $worksheet2->setTitle('Another sheet');
+
+        $hoja = $documento->getSheet('1');
+        $hoja->setCellValue('A1', 'GERENTE GENERAL');
+        $hoja->setCellValue('A2', 'GERENTE GENERAL2');
+
+        //definir la hoja activa
+        $hoja = $documento->setActiveSheetIndex(0);
+
                         
         $fileNameExcel="NORTE_2.xlsx";
         $writer = new Xlsx($documento);
