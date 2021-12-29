@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\dtpdatospaginas;
 use App\Models\fecfechas;
 use DateTime;
-use FFI;
 use Goutte\Client;
 
 class MetEtlObtenerDatosPaginasController extends Controller
