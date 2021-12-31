@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-
+use App\Models\empempresas;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -20,5 +20,6 @@ class DatabaseSeeder extends Seeder
         $this->call(tpatiposauditoriasSeeder::class);
         $this->call(tputiposusuariosSeeder::class);
         $this->call(tcaptiposcargaarchivosSeeder::class);
+        $this->call(empempresasSeeder::class);
     }
 }

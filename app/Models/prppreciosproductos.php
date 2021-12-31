@@ -13,7 +13,14 @@ class prppreciosproductos extends Model
         'prpid',
         'proid',
         'fecid',
-        'prpprecio'
+        'prpprecio',
+        'prodate',
+        'procodclientesi',
+        'procodmaterial',
+        'proexchangevalue2',
+        'proexchangevalue3',
+        'proexchangevalue4',
+        'proexchangevalue5'
     ];
 
     public function carcargasarchivos()

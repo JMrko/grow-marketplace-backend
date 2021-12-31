@@ -63,6 +63,9 @@ $router->post('/cambiar-contrasenia','Validaciones\RecuperarContrasenia\Recupera
 
 $router->post('/importar-excel-cliente','Validaciones\CargaArchivos\ValCargaArchivosController@ValImportarExcelCliente');
 $router->post('/importar-excel-competencia','Validaciones\CargaArchivos\ValCargaArchivosController@ValImportarExcelCompetencia');
+$router->post('/importar-excel-maestra-productos','Validaciones\CargaArchivos\ValCargaArchivosController@ValCargaMaestraProductos');
+$router->post('/importar-excel-maestra-precios','Validaciones\CargaArchivos\ValCargaArchivosController@ValCargaMaestraPrecios');
+
 $router->get('/descargar-fichero-competencia/{nombre_fichero}','Metodos\CargaArchivos\MetCargaArchivosMLCompetenciaController@MetDescargarArchivo');
 $router->get('/generar-excel','Metodos\ExportacionArchivos\MetGenerarExcelController@MetExcelNorte');
 
