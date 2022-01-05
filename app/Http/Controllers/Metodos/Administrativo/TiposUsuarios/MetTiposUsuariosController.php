@@ -44,7 +44,7 @@ class MetTiposUsuariosController extends Controller
             'mensaje'   => $mensaje
         ]);
 
-        if ($respuesta == true) {
+        if ($respuesta == true || $respuesta == false) {
             $AuditoriaController = new AuditoriaController;
             $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
                 $token_adm,
@@ -106,7 +106,7 @@ class MetTiposUsuariosController extends Controller
             'mensaje'   => $mensaje
         ]);
 
-        if ($respuesta == true) {
+        if ($respuesta == true || $respuesta == false) {
             $AuditoriaController = new AuditoriaController;
             $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
                 $token,
@@ -164,7 +164,7 @@ class MetTiposUsuariosController extends Controller
             'mensaje'   => $mensaje
         ]);
 
-        if ($respuesta == true) {
+        if ($respuesta == true || $respuesta == false) {
             $AuditoriaController = new AuditoriaController;
             $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
                 $token,

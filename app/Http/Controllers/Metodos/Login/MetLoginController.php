@@ -84,7 +84,7 @@ class MetLoginController extends Controller
             'mensaje'   => $mensaje
         ]);
 
-        if ($respuesta == true) {
+        if ($respuesta == true || $respuesta == false) {
             $AuditoriaController = new AuditoriaController;
             $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
                 $usutoken,
@@ -187,7 +187,7 @@ class MetLoginController extends Controller
             'token'     => $usutoken
         ]);
 
-        if ($respuesta == true) {
+        if ($respuesta == true || $respuesta == false) {
             $AuditoriaController = new AuditoriaController;
             $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
                 $usutoken,

@@ -34,7 +34,7 @@ class MetCargaArchivosMLClienteController extends Controller
         $fichero_subido = $request->file('archivo');
         $nombre_fichero = $fichero_subido->getClientOriginalName();
         $extension_fichero = $fichero_subido->getClientOriginalExtension();
-        $url_fichero = "http://127.0.0.1:8000/descargar-fichero-competencia/".$nombre_fichero."/".$extension_fichero;
+        $url_fichero = env('URL')."/CargaArchivos/Cliente/".$nombre_fichero;
 
         $usu = usuusuarios::where('usutoken', $token)
                                 ->first([
@@ -139,7 +139,6 @@ class MetCargaArchivosMLClienteController extends Controller
                     $request->file('archivo')->move('CargaArchivos/Cliente', $nombre_fichero);
                     $respuesta = true;
                     $mensaje = 'Se almaceno la data carga archivos correctamente';
-                    // $url_fichero = "http://127.0.0.1:8000/CargaArchivos/Cliente/$nombre_fichero.$extension_fichero";
                 }else{
                     $respuesta = false;
                     $mensaje = 'Surgio un error al guardar la data carga archivos';

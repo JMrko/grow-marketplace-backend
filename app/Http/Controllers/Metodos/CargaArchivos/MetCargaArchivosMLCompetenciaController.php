@@ -34,7 +34,7 @@ class MetCargaArchivosMLCompetenciaController extends Controller
         $fichero_subido = $request->file('archivo');
         $nombre_fichero = $fichero_subido->getClientOriginalName();
         $extension_fichero = $fichero_subido->getClientOriginalExtension();
-        $url_fichero = "http://127.0.0.1:8000/descargar-fichero-competencia/".$nombre_fichero;
+        $url_fichero = env('URL')."/CargaArchivos/Competencia/".$nombre_fichero;
 
         $usu = usuusuarios::where('usutoken', $token)
                                 ->first([
@@ -153,7 +153,7 @@ class MetCargaArchivosMLCompetenciaController extends Controller
             'mensaje'   => $mensaje
         ]);
 
-        if ($respuesta == true) {//false
+        if ($respuesta == true || $respuesta == false) {
             $AuditoriaController = new AuditoriaController;
             $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
                 $token,
@@ -182,10 +182,5 @@ class MetCargaArchivosMLCompetenciaController extends Controller
             'respuesta' => $respuesta,
             'mensaje'   => $mensaje
         ]);
-    }
-
-    public function MetDescargarArchivo($nombre_fichero)
-    {
-        return response()->download("CargaArchivos/Competencia/".$nombre_fichero);
     }
 }

@@ -37,7 +37,7 @@ class MetCargaArchivosMaestraPreciosController extends Controller
         $fichero_subido = $request->file('archivo');
         $nombre_fichero = $fichero_subido->getClientOriginalName();
         $extension_fichero = $fichero_subido->getClientOriginalExtension();
-        $url_fichero = "http://127.0.0.1:8000/descargar-fichero-competencia/$nombre_fichero.$extension_fichero";
+        $url_fichero = env('URL')."/CargaArchivos/MaestraPrecios/".$nombre_fichero;
 
         $usu = usuusuarios::where('usutoken', $token)
                                 ->first([
@@ -69,11 +69,17 @@ class MetCargaArchivosMaestraPreciosController extends Controller
             $ex_exchangevalue3 = $objPHPExcel->getActiveSheet()->getCell('F'.$i)->getCalculatedValue();
             $ex_exchangevalue4 = $objPHPExcel->getActiveSheet()->getCell('G'.$i)->getCalculatedValue();
             $ex_exchangevalue5= $objPHPExcel->getActiveSheet()->getCell('H'.$i)->getCalculatedValue();
+
+            if ($i==2) {
+                $mes = $fecha_datetime->format('m');
+                prppreciosproductos::where('prpdate','LIKE','%-'.$mes.'-%')
+                                            ->delete();
+            }
             
             $proid = proproductos::where('procodmaterial', $ex_codmaterial)->first('proid');
             if ($proid) {
                 $proid = $proid->proid;
-                $prou = proproductos::where('procodmaterial', $ex_codmaterial)
+                proproductos::where('procodmaterial', $ex_codmaterial)
                                         ->update([
                                             'proprecio' => $ex_exchangevalue1
                                         ]);
@@ -81,44 +87,28 @@ class MetCargaArchivosMaestraPreciosController extends Controller
                 $proid = null;
             }
 
-            $prp = prppreciosproductos::where('prpcodmaterial',$ex_codmaterial)
-                                        ->where('prpdate', $fecha)
-                                        ->first('prpid');
-            if ($prp) {
-                prppreciosproductos::where('prpid',$prp->prpid)
-                                    ->update([
-                                        'prpprecio'         => $ex_exchangevalue1,
-                                        'prpcodclientesi'   => $ex_codclientesi,
-                                        'prpexchangevalue2' => $ex_exchangevalue2,
-                                        'prpexchangevalue3' => $ex_exchangevalue3,
-                                        'prpexchangevalue4' => $ex_exchangevalue4,
-                                        'prpexchangevalue5' => $ex_exchangevalue5,
-                                    ]);
-            }else{
-                $ETL = new MetEtlObtenerDatosPaginasController;
-                $fecid = $ETL->validarDataPorFecha();
+            $ETL = new MetEtlObtenerDatosPaginasController;
+            $fecid = $ETL->validarDataPorFecha();
 
-                $prpreciosproductos = new prppreciosproductos();
-                $prpreciosproductos->proid                             = $proid;
-                $prpreciosproductos->fecid                             = $fecid;
-                $prpreciosproductos->prpprecio                         = $ex_exchangevalue1;
-                $prpreciosproductos->prpdate                           = $fecha;
-                $prpreciosproductos->prpcodclientesi                   = $ex_codclientesi;
-                $prpreciosproductos->prpcodmaterial                    = $ex_codmaterial;
-                $prpreciosproductos->prpexchangevalue2                 = $ex_exchangevalue2;
-                $prpreciosproductos->prpexchangevalue3                 = $ex_exchangevalue3;
-                $prpreciosproductos->prpexchangevalue4                 = $ex_exchangevalue4;
-                $prpreciosproductos->prpexchangevalue5                 = $ex_exchangevalue5;
-    
-                if ($prpreciosproductos->save()) {
-                    $respuesta = true;
-                    $mensaje = 'Se almaceno la data correctamente';
-                }else{
-                    $respuesta = false;
-                    $mensaje = 'Surgio un error al guardar la data del excel';
-                }
+            $prpreciosproductos = new prppreciosproductos();
+            $prpreciosproductos->proid                             = $proid;
+            $prpreciosproductos->fecid                             = $fecid;
+            $prpreciosproductos->prpprecio                         = $ex_exchangevalue1;
+            $prpreciosproductos->prpdate                           = $fecha;
+            $prpreciosproductos->prpcodclientesi                   = $ex_codclientesi;
+            $prpreciosproductos->prpcodmaterial                    = $ex_codmaterial;
+            $prpreciosproductos->prpexchangevalue2                 = $ex_exchangevalue2;
+            $prpreciosproductos->prpexchangevalue3                 = $ex_exchangevalue3;
+            $prpreciosproductos->prpexchangevalue4                 = $ex_exchangevalue4;
+            $prpreciosproductos->prpexchangevalue5                 = $ex_exchangevalue5;
+
+            if ($prpreciosproductos->save()) {
+                $respuesta = true;
+                $mensaje = 'Se almaceno la data correctamente';
+            }else{
+                $respuesta = false;
+                $mensaje = 'Surgio un error al guardar la data del excel';
             }
-            
         }
         if ($respuesta == true) {
             $carcargasarchivos = new carcargasarchivos();
@@ -133,7 +123,7 @@ class MetCargaArchivosMaestraPreciosController extends Controller
 
             if ($carcargasarchivos->save()) {
                 Mail::to($usu->usucorreo)->send(new CargaArchivosMail($data));
-                $request->file('archivo')->move('CargaArchivos/MaestraProductos', $nombre_fichero);
+                $request->file('archivo')->move('CargaArchivos/MaestraPrecios', $nombre_fichero);
                 $respuesta = true;
                 $mensaje = 'Se almaceno la data carga archivos correctamente';
             }else{

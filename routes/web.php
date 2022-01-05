@@ -42,6 +42,7 @@ $router->get('/exportar-productos/{id}', 'Validaciones\ValExportarDatosControlle
 $router->get('/obtener-compentencias/{pagid}', 'Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValObtenerListaCompetencias');
 $router->get('/obtener-productos/{empid}','Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValObtenerListaProducto');
 $router->patch('/asignar-sku/{dtpid}/{proid}','Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValAsignacionProductoCompetencia');
+$router->get('/obtener-producto-homologados/{proid}', 'Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValObtenerProductoConHomologaciones');
 
 $router->get('/obtener-permisos/{tpuid}','Validaciones\Administrativo\Permisos\ValPermisosController@ValObtenerListaPermisos');
 $router->get('/obtener-archivos-cargados/{empid}','Validaciones\Upload\ValArchivosController@ValObtenerListaArchivosCargados');
@@ -66,7 +67,6 @@ $router->post('/importar-excel-competencia','Validaciones\CargaArchivos\ValCarga
 $router->post('/importar-excel-maestra-productos','Validaciones\CargaArchivos\ValCargaArchivosController@ValCargaMaestraProductos');
 $router->post('/importar-excel-maestra-precios','Validaciones\CargaArchivos\ValCargaArchivosController@ValCargaMaestraPrecios');
 
-$router->get('/descargar-fichero-competencia/{nombre_fichero}','Metodos\CargaArchivos\MetCargaArchivosMLCompetenciaController@MetDescargarArchivo');
 $router->get('/generar-excel','Metodos\ExportacionArchivos\MetGenerarExcelController@MetExcelNorte');
 
 $router->post('/crear-favorito','Validaciones\Favoritos\ValFavoritosController@ValCrearFavoritos');

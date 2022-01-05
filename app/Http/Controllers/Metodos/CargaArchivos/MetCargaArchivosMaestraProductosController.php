@@ -33,7 +33,7 @@ class MetCargaArchivosMaestraProductosController extends Controller
         $fichero_subido = $request->file('archivo');
         $nombre_fichero = $fichero_subido->getClientOriginalName();
         $extension_fichero = $fichero_subido->getClientOriginalExtension();
-        $url_fichero = "http://127.0.0.1:8000/descargar-fichero-competencia/$nombre_fichero.$extension_fichero";
+        $url_fichero = env('URL')."/CargaArchivos/MaestraProductos/".$nombre_fichero;
 
         $usu = usuusuarios::where('usutoken', $token)
                                 ->first([

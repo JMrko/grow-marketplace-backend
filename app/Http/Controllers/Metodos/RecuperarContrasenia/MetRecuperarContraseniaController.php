@@ -66,7 +66,7 @@ class MetRecuperarContraseniaController extends Controller
             'mensaje'   => $mensaje
         ]);
 
-        if ($respuesta == true) {
+        if ($respuesta == true || $respuesta == false) {
             $AuditoriaController = new AuditoriaController;
             $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
                 $token,

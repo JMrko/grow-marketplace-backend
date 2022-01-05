@@ -78,4 +78,33 @@ class ValAsignarProductoDeCompetenciaController extends Controller
             'mensaje'   => $mensaje
         ]);
     }
+
+    public function ValObtenerProductoConHomologaciones(Request $request, $proid)
+    {
+        $respuesta = false;
+        $mensaje = '';
+
+        $token = $request->header('token');
+        $usu = usuusuarios::where('usutoken', $token)->first('usutoken');
+
+        $pro = proproductos::where('proid', $proid)->first('proid');
+
+        if ($usu) {
+            if ($pro) {
+                $proHomologado = new MetAsignarProductoDeCompetenciaController;
+                return $proHomologado->MetObtenerProductoConHomologaciones($proid);
+            }else{
+                $respuesta = false;
+                $mensaje = 'Ingrese un ID de producto válido';
+            }
+        }else{
+            $respuesta = false;
+            $mensaje = 'Ingrese un token valido';
+        }
+        
+        return response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje
+        ]);
+    }
 }

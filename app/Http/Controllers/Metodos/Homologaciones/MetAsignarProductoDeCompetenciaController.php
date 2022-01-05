@@ -115,7 +115,7 @@ class MetAsignarProductoDeCompetenciaController extends Controller
             'datos'     => $dtp
         ]);
 
-        if ($respuesta == true) {
+        if ($respuesta == true || $respuesta == false) {
             $AuditoriaController = new AuditoriaController;
             $registrarAuditoria  = $AuditoriaController->registrarAuditoria(
                 $token,
@@ -144,5 +144,42 @@ class MetAsignarProductoDeCompetenciaController extends Controller
             'respuesta' => $respuesta,
             'mensaje'   => $mensaje
         ]);
+    }
+
+    public function MetObtenerProductoConHomologaciones($proid)
+    {
+        $respuesta = false;
+        $mensaje   =  '';
+        
+        $pro = proproductos::where('proid', $proid)
+                            ->join('tpmtiposmonedas as tpm', 'tpm.tpmid', 'proproductos.tpmid')
+                            ->first([
+                                'pronombre',
+                                'proimagen',
+                                'proprecio',
+                                'tpmsigno'
+                            ]);
+        $dtp = dtpdatospaginas::where('proid', $proid)
+                                ->join('tpmtiposmonedas as tpm', 'tpm.tpmid', 'dtpdatospaginas.tpmid')
+                                ->join('pagpaginas as pag', 'pag.pagid', 'dtpdatospaginas.pagid')
+                                ->get([
+                                    'pagnombre',
+                                    'dtpprecio',
+                                    'dtpurl',
+                                    'tpmsigno'
+                                ]);
+
+        if ($pro) {
+            $respuesta = true;
+            $mensaje = 'Se obtuvo los datos del producto exitosamente';
+        }
+
+        return response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje,
+            'datos'  => $pro,
+            'homologaciones' => $dtp
+        ]);
+                    
     }
 }
