@@ -21,5 +21,7 @@ class DatabaseSeeder extends Seeder
         $this->call(tputiposusuariosSeeder::class);
         $this->call(tcaptiposcargaarchivosSeeder::class);
         $this->call(empempresasSeeder::class);
+        $this->call(perpersonasSeeder::class);
+        $this->call(usuusuariosSeeder::class);
     }
 }

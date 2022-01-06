@@ -77,9 +77,13 @@ $app->configure('services');
 //     App\Http\Middleware\ExampleMiddleware::class
 // ]);
 
-$app->routeMiddleware([
-    'auth' => App\Http\Middleware\Authenticate::class,
+$app->middleware([
+    "abilitarcor" => App\Http\Middleware\CorsMiddleware::class // Add this
 ]);
+
+// $app->routeMiddleware([
+//     'auth' => App\Http\Middleware\Authenticate::class,
+// ]);
 
 /*
 |--------------------------------------------------------------------------
