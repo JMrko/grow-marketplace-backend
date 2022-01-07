@@ -22,12 +22,11 @@ class Proproductos extends Migration
             $table->string('pronombre', 150);
             $table->decimal('proprecio', 15, 4)->nullable(); //debe aceptar 8 decimales
             $table->string('proimagen', 250)->nullable();
-            $table->string('prosku', 100)->nullable();
+            $table->string('prosku', 15)->nullable();
             $table->string('procodsalesorganization', 50)->nullable();
             $table->string('prosalesorganization', 50)->nullable();
             $table->string('procodbusiness', 50)->nullable();
             $table->string('probusiness', 10)->nullable();
-            $table->string('procodmaterial', 15)->nullable();
             $table->string('procodcategoria', 20)->nullable();
             $table->string('procategoria', 50)->nullable();
             $table->string('procodsector', 15)->nullable();

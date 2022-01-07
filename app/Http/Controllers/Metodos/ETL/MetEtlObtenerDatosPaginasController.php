@@ -1805,7 +1805,6 @@ class MetEtlObtenerDatosPaginasController extends Controller
                                             ->send();
 
                     $productosSubcategorias = $datosSubcategoria->body;
-                    dd($productosSubcategorias);
                     if(sizeof($productosSubcategorias)>0){
                         foreach ($productosSubcategorias as $productosSubcategoria) {
 

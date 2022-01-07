@@ -60,7 +60,7 @@ class Dtpdatospaginas extends Migration
             $table->decimal('dtppromediodeventas', 15, 4)->nullable();//16
             $table->integer('dtppreciopromedio')->nullable();//5
             $table->string('dtpfulfillment', 5)->nullable();//2
-            $table->string('dtpdescuento', 5)->nullable();//2
+            $table->string('dtpdescuento', 20)->nullable();//2
             $table->string('dtptipopublicacion', 15)->nullable();//8
             $table->string('dtpcondicion', 15)->nullable();//5
             $table->timestamps();

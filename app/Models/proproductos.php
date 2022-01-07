@@ -23,7 +23,6 @@ class proproductos extends Model
         'prosalesorganization',
         'procodbusiness',
         'probusiness',
-        'procodmaterial',
         'procodcategoria',
         'procategoria',
         'procodsector',

@@ -92,12 +92,12 @@ class MetCargaArchivosMaestraProductosController extends Controller
             $ex_attribute9 = $objPHPExcel->getActiveSheet()->getCell('AI'.$i)->getCalculatedValue();
             $ex_attribute10 = $objPHPExcel->getActiveSheet()->getCell('AJ'.$i)->getCalculatedValue();
 
-            $pro = proproductos::where('procodmaterial',$ex_cod_material)
+            $pro = proproductos::where('prosku',$ex_cod_material)
                                     ->first('proid');
             if ($pro) {
                 proproductos::where('proid',$pro->proid)
                                 ->update([
-                                    'procodsalesorganization'           =>  $ex_cod_sales_organization,
+                                    'procodsalesorganization'           => $ex_cod_sales_organization,
                                     'prosalesorganization'              => $ex_sales_organization,
                                     'procodbusiness'                    => $ex_cod_business,
                                     'probusiness'                       => $ex_business,
@@ -146,7 +146,7 @@ class MetCargaArchivosMaestraProductosController extends Controller
                 $proproducto->prosalesorganization              = $ex_sales_organization;
                 $proproducto->procodbusiness                    = $ex_cod_business;
                 $proproducto->probusiness                       = $ex_business;
-                $proproducto->procodmaterial                    = $ex_cod_material;
+                $proproducto->prosku                            = $ex_cod_material;
                 $proproducto->procodcategoria                   = $ex_cod_categoria;
                 $proproducto->procategoria                      = $ex_categoria;
                 $proproducto->procodsector                      = $ex_cod_sector;
