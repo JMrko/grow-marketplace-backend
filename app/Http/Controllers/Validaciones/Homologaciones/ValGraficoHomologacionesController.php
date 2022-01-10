@@ -11,20 +11,21 @@ use Illuminate\Http\Request;
 
 class ValGraficoHomologacionesController extends Controller
 {
-    public function ValDatosProductoOriginalGrafico(Request $request, $proid)
+    public function ValDatosProductoOriginalGrafico(Request $request)
     {
         $respuesta = false;
         $mensaje = '';
 
         // $token = $request->header('token');
         // $usu = usuusuarios::where('usutoken', $token)->first('usutoken');
+        $proid = $request['proid'];
 
         $pro = proproductos::where('proid', $proid)->first('proid');
 
         // if ($usu) {
             if ($pro) {
                 $grafica = new MetGraficoHomologacionesController;
-                return $grafica->MetDatosProductoOriginalGrafico($proid);
+                return $grafica->MetDatosProductoOriginalGrafico($request);
             }else{
                 $respuesta = false;
                 $mensaje = 'Ingrese un ID de producto válido';

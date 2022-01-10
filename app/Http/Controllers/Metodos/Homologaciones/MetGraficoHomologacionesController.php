@@ -7,10 +7,11 @@ use App\Models\dtpdatospaginas;
 use App\Models\pagpaginas;
 use App\Models\prppreciosproductos;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class MetGraficoHomologacionesController extends Controller
 {
-    public function MetDatosProductoOriginalGrafico($proid)
+    public function MetDatosProductoOriginalGrafico(Request $request)
     {
         $respuesta = false;
         $mensaje = '';
@@ -22,15 +23,33 @@ class MetGraficoHomologacionesController extends Controller
             "borderColor"     => "rgb(255, 99, 132)",
             "backgroundColor" => "rgba(255, 99, 132, 0.5)"
         );
+
+        $fecha_inicio = $request['fecha_inicio'];
+        $fecha_final  = $request['fecha_final'];
+        $proid        = $request['proid'];
+
         //OBTENER LAS FECHAS PARA EL EJE X
-        $fechas = dtpdatospaginas::join('fecfechas as fec', 'fec.fecid', 'dtpdatospaginas.fecid')
-                                    ->where('proid', $proid)
-                                    ->distinct('fec.fecid') 
-                                    ->orderBy('fecfecha', 'ASC')
-                                    ->get([
-                                        'fec.fecid',
-                                        'fecfecha'
-                                    ]);
+        if ($fecha_inicio &&  $fecha_final) {
+            $fechas = dtpdatospaginas::join('fecfechas as fec', 'fec.fecid', 'dtpdatospaginas.fecid')
+                                        ->where('proid', $proid)
+                                        ->whereBetween('fec.fecfecha', [$fecha_inicio, $fecha_final])
+                                        ->distinct('fec.fecid') 
+                                        ->orderBy('fecfecha', 'ASC')
+                                        ->get([
+                                            'fec.fecid',
+                                            'fecfecha'
+                                        ]);
+        }else{
+            $fechas = dtpdatospaginas::join('fecfechas as fec', 'fec.fecid', 'dtpdatospaginas.fecid')
+                                        ->where('proid', $proid)
+                                        ->where('fec.fecfecha', '>=', Carbon::now()->subDays(30))
+                                        ->distinct('fec.fecid') 
+                                        ->orderBy('fecfecha', 'ASC')
+                                        ->get([
+                                            'fec.fecid',
+                                            'fecfecha'
+                                        ]);
+        }
 
         foreach($fechas as $fecha){
             $labels_fechas[] = $fecha->fecfecha;
@@ -109,6 +128,7 @@ class MetGraficoHomologacionesController extends Controller
             $fechas = dtpdatospaginas::join('fecfechas as fec', 'fec.fecid', 'dtpdatospaginas.fecid')
                                     ->where('proid', $proid)
                                     ->where('pagid', $pagid)
+                                    ->where('fec.fecfecha', '>=', Carbon::now()->subDays(30))
                                     ->distinct('fec.fecid') 
                                     ->orderBy('fecfecha', 'ASC')
                                     ->get([
@@ -127,11 +147,11 @@ class MetGraficoHomologacionesController extends Controller
                                     ->where('fecid', $fecha->fecid)
                                     ->where('pagid', $pagid)
                                     ->first([
-                                        'prpprecio'
+                                        'dtpprecio'
                                     ]);
 
             if($prp){
-                $data_grafico[] = $prp->prpprecio;
+                $data_grafico[] = $prp->dtpprecio;
             }else{
                 $data_grafico[] = "0";
             }

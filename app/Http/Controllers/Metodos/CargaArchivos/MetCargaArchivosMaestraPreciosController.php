@@ -76,10 +76,10 @@ class MetCargaArchivosMaestraPreciosController extends Controller
                                             ->delete();
             }
             
-            $proid = proproductos::where('procodmaterial', $ex_codmaterial)->first('proid');
+            $proid = proproductos::where('prosku', $ex_codmaterial)->first('proid');
             if ($proid) {
                 $proid = $proid->proid;
-                proproductos::where('procodmaterial', $ex_codmaterial)
+                proproductos::where('prosku', $ex_codmaterial)
                                         ->update([
                                             'proprecio' => $ex_exchangevalue1
                                         ]);
