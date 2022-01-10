@@ -13,7 +13,10 @@ class pagpaginas extends Model
         'pagid',
         'tpmid',
         'pagnombre',
-        'paglink'
+        'paglink',
+        'pagimagen',
+        'pagbordercolor',
+        'pagbackgroundcolor'
     ];
 
     public function dtpdatospaginas()

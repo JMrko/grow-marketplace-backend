@@ -18,6 +18,9 @@ class Pagpaginas extends Migration
             $table->unsignedInteger('tpmid');
             $table->string('pagnombre', 150);
             $table->string('paglink', 250);
+            $table->string('pagimagen',250)->nullable();
+            $table->string('pagbordercolor', 30);
+            $table->string('pagbackgroundcolor', 30);
             $table->timestamps();
 
             $table->foreign('tpmid')->references('tpmid')->on('tpmtiposmonedas');

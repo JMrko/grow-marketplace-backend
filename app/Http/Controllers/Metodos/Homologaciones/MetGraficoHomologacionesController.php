@@ -5,47 +5,39 @@ namespace App\Http\Controllers\Metodos\Homologaciones;
 use App\Http\Controllers\Controller;
 use App\Models\dtpdatospaginas;
 use App\Models\pagpaginas;
+use App\Models\prppreciosproductos;
 use Illuminate\Http\Request;
 
 class MetGraficoHomologacionesController extends Controller
 {
-    public function MetGrafico($proid)
+    public function MetDatosProductoOriginalGrafico($proid)
     {
         $respuesta = false;
         $mensaje = '';
-        $paginas = [];
-        $fechas_pagina = [];
-
         $labels_fechas = [];
-
         $data_grafico = [];
         $arr_data_grafico = array(
-            "label" => "SOFTYS",
-            "data"  => [],
+            "label"           => "SOFTYS",
+            "data"            => [],
+            "borderColor"     => "rgb(255, 99, 132)",
+            "backgroundColor" => "rgba(255, 99, 132, 0.5)"
         );
-
-        // {
-        //     label: 'Dataset 1',
-        //     data: [1,2,3,4,50,6,7],
-            
-        // },
-
         //OBTENER LAS FECHAS PARA EL EJE X
         $fechas = dtpdatospaginas::join('fecfechas as fec', 'fec.fecid', 'dtpdatospaginas.fecid')
                                     ->where('proid', $proid)
-                                    ->distinct('fecid') // Agregar
+                                    ->distinct('fec.fecid') 
+                                    ->orderBy('fecfecha', 'ASC')
                                     ->get([
-                                        'fecid',
+                                        'fec.fecid',
                                         'fecfecha'
-                                    ]);//orderby de fecfechas
+                                    ]);
 
         foreach($fechas as $fecha){
             $labels_fechas[] = $fecha->fecfecha;
         }
 
         // BUCLE PARA RETORNAR LA DATA DEL PRODUCTO ORIGINAL 
-
-        foreach ($fechas as $key => $fecha) {
+        foreach ($fechas as $fecha) {
             
             $prp = prppreciosproductos::where('proid', $proid)
                                         ->where('fecid', $fecha->fecid)
@@ -58,51 +50,16 @@ class MetGraficoHomologacionesController extends Controller
             }else{
                 $data_grafico[] = "0";
             }
-
         }
 
         $arr_data_grafico = array(
             "label" => "SOFTYS",
             "data"  => $data_grafico,
+            "borderColor"     => "rgb(255, 99, 132)",
+            "backgroundColor" => "rgba(255, 99, 132, 0.5)"
         );
-
-
-                                   
-        //OBTENER LOS ID PAGINAS DE LAS FECHAS OBTENIDAS
-        foreach ($fechas as $fecha) {
-           $datos_pagina =  dtpdatospaginas::join('fecfechas as fec', 'fec.fecid', 'dtpdatospaginas.fecid') 
-                                // ->join('pagpaginas as pag', 'pag.pagid', 'dtpdatospaginas.pagid')
-                                ->where('fecfecha', $fecha->fecfecha)
-                                ->where('proid', $proid)
-                                ->get([
-                                    'pagid'
-                                ]);
-
-            for ($i=0; $i < sizeof($datos_pagina); $i++) { 
-                $paginas[]= $datos_pagina[$i]->pagid;
-            }
-        }
-
-        $paginas_unicas = array_unique($paginas);
- 
-        //ALMACENAR EN UN ARRAY EL IDPAG CON LAS FECHAS DE CADA PAGINA
-        for ($i=0; $i < sizeof($paginas_unicas) ; $i++) { 
-            $pag_fechas = dtpdatospaginas::join('fecfechas as fec', 'fec.fecid', 'dtpdatospaginas.fecid')
-                                            ->where('proid', $proid)
-                                            ->where('dtpdatospaginas.pagid', $paginas_unicas[$i])
-                                            ->get([
-                                                'fecfecha'
-                                            ]);
-
-            $nombre = pagpaginas::where('pagid', $paginas_unicas[$i])
-                                    ->first('pagnombre');
-
-           $fechas_pagina[$i]['label'] = $nombre->pagnombre; 
-           $fechas_pagina[$i]['data'] = $pag_fechas;
-        }
         
-
-        if ($fechas && $fechas_pagina) {
+        if ($arr_data_grafico) {
             $respuesta = true;
             $mensaje = 'Se obtuvo los datos del producto exitosamente';
         }else{
@@ -113,17 +70,101 @@ class MetGraficoHomologacionesController extends Controller
         return response()->json([
             'respuesta' => $respuesta,
             'mensaje'   => $mensaje,
-            'fechas'    => $fechas,
-            'datos'     => $fechas_pagina
+            'fechas'    => $labels_fechas,
+            'datos'     => $arr_data_grafico
         ]);
     }
 
-    public function MetObtenerProductosCompetenciaGrafico(Request $request)
+    public function MetDatosProductosCompetenciaGrafico(Request $request)
     {
 
-        $re_fechas = $request['fechas'];
-        $re_pagid  = $request['pagid'];
-        $re_proid  = $request['proid'];
+        $respuesta = false;
+        $mensaje = '';
+        $labels_fechas = [];
+        $data_grafico = [];
+        $arr_data_grafico = array(
+            "label"           => "",
+            "data"            => [],
+            "borderColor"     => "",
+            "backgroundColor" => ""
+        );
 
+        $fecha_inicio = $request['fecha_inicio'];
+        $fecha_final  = $request['fecha_final'];
+        $pagid        = $request['pagid'];
+        $proid        = $request['proid'];
+
+        if ($fecha_inicio &&  $fecha_final) {
+            $fechas = dtpdatospaginas::join('fecfechas as fec', 'fec.fecid', 'dtpdatospaginas.fecid')
+                                    ->where('proid', $proid)
+                                    ->where('pagid', $pagid)
+                                    ->whereBetween('fec.fecfecha', [$fecha_inicio, $fecha_final])
+                                    ->distinct('fec.fecid') 
+                                    ->orderBy('fecfecha', 'ASC')
+                                    ->get([
+                                        'fec.fecid',
+                                        'fecfecha'
+                                    ]);
+        }else{
+            $fechas = dtpdatospaginas::join('fecfechas as fec', 'fec.fecid', 'dtpdatospaginas.fecid')
+                                    ->where('proid', $proid)
+                                    ->where('pagid', $pagid)
+                                    ->distinct('fec.fecid') 
+                                    ->orderBy('fecfecha', 'ASC')
+                                    ->get([
+                                        'fec.fecid',
+                                        'fecfecha'
+                                    ]);
+        }
+
+        foreach($fechas as $fecha){
+            $labels_fechas[] = $fecha->fecfecha;
+        }
+
+        foreach ($fechas as $fecha) {
+            
+            $prp = dtpdatospaginas::where('proid', $proid)
+                                    ->where('fecid', $fecha->fecid)
+                                    ->where('pagid', $pagid)
+                                    ->first([
+                                        'prpprecio'
+                                    ]);
+
+            if($prp){
+                $data_grafico[] = $prp->prpprecio;
+            }else{
+                $data_grafico[] = "0";
+            }
+        }
+
+        $pag = pagpaginas::where('pagid', $pagid)
+                            ->first([
+                                'pagnombre',
+                                'pagbordercolor',
+                                'pagbackgroundcolor'
+                            ]);
+        $arr_data_grafico = array(
+            "label" => $pag->pagnombre,
+            "data"  => $data_grafico,
+            "borderColor"     => $pag->pagbordercolor,
+            "backgroundColor" => $pag->pagbackgroundcolor
+        );
+        
+        if ($arr_data_grafico) {
+            $respuesta = true;
+            $mensaje = 'Se obtuvo los datos del homologados exitosamente';
+        }else{
+            $respuesta = false;
+            $mensaje = 'Surgio un error al obtener la datos del homologado';
+        }
+                        
+        return response()->json([
+            'respuesta' => $respuesta,
+            'mensaje'   => $mensaje,
+            'fechas'    => $labels_fechas,
+            'datos'     => $arr_data_grafico
+        ]);
+                                   
+        
     }
 }
