@@ -20,7 +20,7 @@ class pagpaginasSeeder extends Seeder
         $pagina1->paglink            = "https://www.arcalauquen.cl/";
         $pagina1->pagbordercolor     = "rgb(222, 39, 39)";
         $pagina1->pagbackgroundcolor = "rgba(222, 39, 39, 0.5)";
-        
+        $pagina1->pagprioritario     = true;
         $pagina1->save();
 
         $pagina2 = new pagpaginas();
@@ -29,6 +29,7 @@ class pagpaginasSeeder extends Seeder
         $pagina2->paglink            = "https://torkalpormayor.cl/";
         $pagina2->pagbordercolor     = "rgb(118, 196, 30)";
         $pagina2->pagbackgroundcolor = "rgba(118, 196, 30, 0.5)";
+        $pagina2->pagprioritario     = true;
         $pagina2->save();
 
         $pagina3 = new pagpaginas();
@@ -37,6 +38,7 @@ class pagpaginasSeeder extends Seeder
         $pagina3->paglink            = "https://dipisa.cl/";
         $pagina3->pagbordercolor     = "rgb(36, 133, 68)";
         $pagina3->pagbackgroundcolor = "rgba(36, 133, 68, 0.5)";
+        $pagina3->pagprioritario     = true;
         $pagina3->save();
 
         $pagina4 = new pagpaginas();

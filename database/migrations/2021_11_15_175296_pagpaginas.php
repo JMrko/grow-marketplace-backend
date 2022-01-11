@@ -21,6 +21,7 @@ class Pagpaginas extends Migration
             $table->string('pagimagen',250)->nullable();
             $table->string('pagbordercolor', 30);
             $table->string('pagbackgroundcolor', 30);
+            $table->boolean('pagprioritario')->default(false);
             $table->timestamps();
 
             $table->foreign('tpmid')->references('tpmid')->on('tpmtiposmonedas');

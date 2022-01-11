@@ -16,7 +16,8 @@ class pagpaginas extends Model
         'paglink',
         'pagimagen',
         'pagbordercolor',
-        'pagbackgroundcolor'
+        'pagbackgroundcolor',
+        'pagprioritario'
     ];
 
     public function dtpdatospaginas()

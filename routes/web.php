@@ -33,18 +33,20 @@ $router->get('/scrapingHygiene', 'ScraperController@hygiene');
 $router->get('/scrapingMercado', 'ScraperController@mercado');
 $router->get('/scrapingCuponatic', 'ScraperController@cuponatic');
 
-$router->get('/test', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerArcalauquen');
+$router->get('/test', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerDipisa');
 
 $router->get('/exportar-competencias/{id}', 'Validaciones\ValExportarDatosController@ValExportarCompetencias');
 $router->get('/exportar-usuarios/{id}', 'Validaciones\ValExportarDatosController@ValExportarUsuarios');
 $router->get('/exportar-productos/{id}', 'Validaciones\ValExportarDatosController@ValExportarProductosNoHomologados');
 
+//Homologaciones
 $router->get('/obtener-compentencias/{pagid}', 'Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValObtenerListaCompetencias');
 $router->get('/obtener-productos/{empid}','Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValObtenerListaProducto');
 $router->patch('/asignar-sku/{dtpid}/{proid}','Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValAsignacionProductoCompetencia');
 $router->get('/obtener-producto-homologados/{proid}', 'Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValObtenerProductoConHomologaciones');
 $router->post('/grafico-producto', 'Validaciones\Homologaciones\ValGraficoHomologacionesController@ValDatosProductoOriginalGrafico');
 $router->post('/grafico-agregar-homologado', 'Validaciones\Homologaciones\ValGraficoHomologacionesController@ValObtenerProductosCompetenciaGrafico');
+$router->get('/lista-comparador-competencia/{proid}', 'Validaciones\Homologaciones\ValProductosController@ValObtenerListaCompletaCompetencia');
 
 $router->get('/obtener-permisos/{tpuid}','Validaciones\Administrativo\Permisos\ValPermisosController@ValObtenerListaPermisos');
 $router->get('/obtener-archivos-cargados/{empid}','Validaciones\Upload\ValArchivosController@ValObtenerListaArchivosCargados');
@@ -69,7 +71,9 @@ $router->post('/importar-excel-competencia','Validaciones\CargaArchivos\ValCarga
 $router->post('/importar-excel-maestra-productos','Validaciones\CargaArchivos\ValCargaArchivosController@ValCargaMaestraProductos');
 $router->post('/importar-excel-maestra-precios','Validaciones\CargaArchivos\ValCargaArchivosController@ValCargaMaestraPrecios');
 
+//Exportacion Archivos 
 $router->get('/generar-excel','Metodos\ExportacionArchivos\MetGenerarExcelController@MetExcelNorte');
 
 $router->post('/crear-favorito','Validaciones\Favoritos\ValFavoritosController@ValCrearFavoritos');
 $router->delete('/eliminar-favorito/{favid}','Validaciones\Favoritos\ValFavoritosController@ValEliminarFavoritos');
+

@@ -456,7 +456,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 $crawler = $client->request('GET', $paginaURL);
                 $tituloCategoria = $crawler->filter("[class='col-md-12 text-center']")->first()->text();
 
-                $crawler->filter("[class='col-md-4 mb50']")->each(function($node) use($tituloCategoria, $pagId, $tpmid){
+                $crawler->filter("[class='col-md-4 mb50']")->each(function($node) use($tituloCategoria, $pagId, $tpmid, $paginaURL){
                     $imagenProducto = $node->filter(".box-contenido > img")->attr('src');
                     $nombrePrecioProducto = $node->filter("h5")->text();
                     $nombreProducto = explode ("Un.", $nombrePrecioProducto);
@@ -484,6 +484,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas->dtpprecio       = $precioStringFinal;
                     $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;  
                     $dtpdatospaginas->dtpsigv         = $igvProducto;
+                    $dtpdatospaginas->dtpurl          = $paginaURL;
                     $dtpdatospaginas->save();
                 });
             }
@@ -1639,8 +1640,10 @@ class MetEtlObtenerDatosPaginasController extends Controller
 
     public function MetObtenerCentralMayorista()
     {
-        $pagId = 14;
-        $tpmid = 1;
+        $pagId       = 14;
+        $tpmid       = 1;
+        $precioFinal = "";
+
         $url = 'https://deadpool.instaleap.io/api/v2';
         $queryCategorias = array('operationName'=>'getStore','variables'=>['clientId'=>'CENTRAL_MAYORISTA'],'query'=>'query getStore($storeId: ID, $clientId: String) {  getStore(storeId: $storeId, clientId: $clientId) {    id    name    categories {      id      image      slug      name      redirectTo      isAvailableInHome      __typename    }    banners {      id      title      desktopImage      mobileImage      targetCategory      targetUrl {        url        type        __typename      }      __typename    }    __typename  }}');
         $queryCategoriasJson = json_encode($queryCategorias);
@@ -1694,52 +1697,60 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 'productos' => 'Wipes'
             ],
         );
-        foreach ($categorias as $categoria) 
-        {
-            $id = $categoria->id;
-            $tituloCategoria = $categoria->categoria;
+        if($this->validarDataPorFecha(14, true)){
+            foreach ($categorias as $categoria){
+                $id = $categoria->id;
+                $tituloCategoria = $categoria->categoria;
 
-            $queryProductosObtenerPaginas = array('variables'=> ['categoryId'=> $id,'onlyThisCategory'=>false,'pagination'=>['pageSize'=>30,'currentPage'=>1],'storeId'=>$store],'query'=>'query ($pagination: paginationInput, $search: SearchInput, $storeId: ID!, $categoryId: ID, $onlyThisCategory: Boolean, $filter: ProductsFilterInput, $orderBy: productsSortInput) {  getProducts(pagination: $pagination, search: $search, storeId: $storeId, categoryId: $categoryId, onlyThisCategory: $onlyThisCategory, filter: $filter, orderBy: $orderBy) {    redirectTo    products {      id      description      name      photosUrls      sku      unit      price      specialPrice      promotion {        description        type        isActive        conditions        __typename      }      stock      nutritionalDetails      clickMultiplier      subQty      subUnit      maxQty      minQty      specialMaxQty      ean      boost      showSubUnit      isActive      slug      categories {        id        name        __typename      }      __typename    }    paginator {      pages      page      __typename    }    __typename  }}');
-            $queryProductosObtenerPaginasJson = json_encode($queryProductosObtenerPaginas);
-            $datosProductosObtenerCantidadPaginas = \Httpful\Request::post($url)
-                                    ->sendsJson()
-                                    ->body($queryProductosObtenerPaginasJson)
-                                    ->send();
-            $paginas =$datosProductosObtenerCantidadPaginas->body->data->getProducts->paginator->pages;
-
-            for($i=1; $i<=$paginas;$i++)
-            {
-                $queryProductos = array('variables'=> ['categoryId'=> $id,'onlyThisCategory'=>false,'pagination'=>['pageSize'=>30,'currentPage'=>$i],'storeId'=>$store],'query'=>'query ($pagination: paginationInput, $search: SearchInput, $storeId: ID!, $categoryId: ID, $onlyThisCategory: Boolean, $filter: ProductsFilterInput, $orderBy: productsSortInput) {  getProducts(pagination: $pagination, search: $search, storeId: $storeId, categoryId: $categoryId, onlyThisCategory: $onlyThisCategory, filter: $filter, orderBy: $orderBy) {    redirectTo    products {      id      description      name      photosUrls      sku      unit      price      specialPrice      promotion {        description        type        isActive        conditions        __typename      }      stock      nutritionalDetails      clickMultiplier      subQty      subUnit      maxQty      minQty      specialMaxQty      ean      boost      showSubUnit      isActive      slug      categories {        id        name        __typename      }      __typename    }    paginator {      pages      page      __typename    }    __typename  }}');
-                $queryProductosJson = json_encode($queryProductos);
-                $datosProductos = \Httpful\Request::post($url)
+                $queryProductosObtenerPaginas = array('variables'=> ['categoryId'=> $id,'onlyThisCategory'=>false,'pagination'=>['pageSize'=>30,'currentPage'=>1],'storeId'=>$store],'query'=>'query ($pagination: paginationInput, $search: SearchInput, $storeId: ID!, $categoryId: ID, $onlyThisCategory: Boolean, $filter: ProductsFilterInput, $orderBy: productsSortInput) {  getProducts(pagination: $pagination, search: $search, storeId: $storeId, categoryId: $categoryId, onlyThisCategory: $onlyThisCategory, filter: $filter, orderBy: $orderBy) {    redirectTo    products {      id      description      name      photosUrls      sku      unit      price      specialPrice      promotion {        description        type        isActive        conditions        __typename      }      stock      nutritionalDetails      clickMultiplier      subQty      subUnit      maxQty      minQty      specialMaxQty      ean      boost      showSubUnit      isActive      slug      categories {        id        name        __typename      }      __typename    }    paginator {      pages      page      __typename    }    __typename  }}');
+                $queryProductosObtenerPaginasJson = json_encode($queryProductosObtenerPaginas);
+                $datosProductosObtenerCantidadPaginas = \Httpful\Request::post($url)
                                         ->sendsJson()
-                                        ->body($queryProductosJson)
+                                        ->body($queryProductosObtenerPaginasJson)
                                         ->send();
-                $productos =$datosProductos->body->data->getProducts->products;
-                $pagina = $i;
-                foreach ($productos as $producto) 
-                {
-                    $fecid = $this->validarDataPorFecha(14);
-                    $dtpunidadmedida = $this->obtenerUnidadMedida($producto->name);
+                $paginas =$datosProductosObtenerCantidadPaginas->body->data->getProducts->paginator->pages;
 
-                    $dtpdatospaginas = new dtpdatospaginas();
-                    $dtpdatospaginas->pagid           = $pagId;
-                    $dtpdatospaginas->fecid           = $fecid;
-                    $dtpdatospaginas->tpmid           = $tpmid;
-                    $dtpdatospaginas->dtpnombre       = $producto->name;
-                    $dtpdatospaginas->dtppagina       = $pagina;
-                    $dtpdatospaginas->dtpimagen       = $producto->photosUrls[0];
-                    $dtpdatospaginas->dtpprecio       = $producto->price;
-                    $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
-                    $dtpdatospaginas->dtpsku          = $producto->sku;
-                    $dtpdatospaginas->dtpstock        = $producto->stock;
-                    $dtpdatospaginas->dtpdesclarga    = $producto->description;
-                    $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
-                    $dtpdatospaginas->dtpean          = $producto->ean[0]; 
-                    $dtpdatospaginas->save(); 
+                for($i=1; $i<=$paginas;$i++)
+                {
+                    $queryProductos = array('variables'=> ['categoryId'=> $id,'onlyThisCategory'=>false,'pagination'=>['pageSize'=>30,'currentPage'=>$i],'storeId'=>$store],'query'=>'query ($pagination: paginationInput, $search: SearchInput, $storeId: ID!, $categoryId: ID, $onlyThisCategory: Boolean, $filter: ProductsFilterInput, $orderBy: productsSortInput) {  getProducts(pagination: $pagination, search: $search, storeId: $storeId, categoryId: $categoryId, onlyThisCategory: $onlyThisCategory, filter: $filter, orderBy: $orderBy) {    redirectTo    products {      id      description      name      photosUrls      sku      unit      price      specialPrice      promotion {        description        type        isActive        conditions        __typename      }      stock      nutritionalDetails      clickMultiplier      subQty      subUnit      maxQty      minQty      specialMaxQty      ean      boost      showSubUnit      isActive      slug      categories {        id        name        __typename      }      __typename    }    paginator {      pages      page      __typename    }    __typename  }}');
+                    $queryProductosJson = json_encode($queryProductos);
+                    $datosProductos = \Httpful\Request::post($url)
+                                            ->sendsJson()
+                                            ->body($queryProductosJson)
+                                            ->send();
+                    $productos =$datosProductos->body->data->getProducts->products;
+                    $pagina = $i;
+                    foreach ($productos as $producto) 
+                    {
+                        $fecid = $this->validarDataPorFecha(14);
+                        $dtpunidadmedida = $this->obtenerUnidadMedida($producto->name);
+                        
+                        if ($producto->specialPrice < 0) {
+                            $precioFinal = $producto->specialPrice;
+                        }else{
+                            $precioFinal = $producto->price;
+                        }
+                        $urlProducto = "https://www.centralmayorista.cl/p/$producto->slug";
+
+                        $dtpdatospaginas = new dtpdatospaginas();
+                        $dtpdatospaginas->pagid           = $pagId;
+                        $dtpdatospaginas->fecid           = $fecid;
+                        $dtpdatospaginas->tpmid           = $tpmid;
+                        $dtpdatospaginas->dtpnombre       = $producto->name;
+                        $dtpdatospaginas->dtppagina       = $pagina;
+                        $dtpdatospaginas->dtpimagen       = $producto->photosUrls[0];
+                        $dtpdatospaginas->dtpprecio       = $precioFinal;
+                        $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
+                        $dtpdatospaginas->dtpsku          = $producto->sku;
+                        $dtpdatospaginas->dtpstock        = $producto->stock;
+                        $dtpdatospaginas->dtpdesclarga    = $producto->description;
+                        $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
+                        $dtpdatospaginas->dtpean          = $producto->ean[0]; 
+                        $dtpdatospaginas->dtpurl          = $urlProducto;
+                        $dtpdatospaginas->save(); 
+                    }
                 }
             }
-            
         }
     }
 
@@ -1792,49 +1803,51 @@ class MetEtlObtenerDatosPaginasController extends Controller
                 ],
 
             );
-            foreach ($subcategorias as $subcategoria) {
-                $slug = $subcategoria->slug;
-                $categoria = $subcategoria->categoria;
-                $encontroPagina = true;
-                $numeroPaginas = 1;
-                while($encontroPagina == true)
-                {
-                    $urlSubcategoria = "https://cl-api.cuponatic-latam.com/api2/cdn/descuentos/menu/$slug?ciudad=Santiago&v=14&page=$numeroPaginas";
-                    $datosSubcategoria = \Httpful\Request::get($urlSubcategoria)
-                                            ->sendsJson()
-                                            ->send();
+            if($this->validarDataPorFecha(15, true)){
+                foreach ($subcategorias as $subcategoria) {
+                    $slug = $subcategoria->slug;
+                    $categoria = $subcategoria->categoria;
+                    $encontroPagina = true;
+                    $numeroPaginas = 1;
+                    while($encontroPagina == true)
+                    {
+                        $urlSubcategoria = "https://cl-api.cuponatic-latam.com/api2/cdn/descuentos/menu/$slug?ciudad=Santiago&v=14&page=$numeroPaginas";
+                        $datosSubcategoria = \Httpful\Request::get($urlSubcategoria)
+                                                ->sendsJson()
+                                                ->send();
 
-                    $productosSubcategorias = $datosSubcategoria->body;
-                    if(sizeof($productosSubcategorias)>0){
-                        foreach ($productosSubcategorias as $productosSubcategoria) {
+                        $productosSubcategorias = $datosSubcategoria->body;
+                        if(sizeof($productosSubcategorias)>0){
+                            foreach ($productosSubcategorias as $productosSubcategoria) {
 
-                            $fecid = $this->validarDataPorFecha(15);
+                                $fecid = $this->validarDataPorFecha(15);
 
-                            $precioString = explode("$",$productosSubcategoria->valor_oferta);
-                            $precioStringFinal = trim($precioString[1]);
-                            $dtpunidadmedida = $this->obtenerUnidadMedida($productosSubcategoria->titulo);
+                                $precioString = explode("$",$productosSubcategoria->valor_oferta);
+                                $precioStringFinal = trim($precioString[1]);
+                                $dtpunidadmedida = $this->obtenerUnidadMedida($productosSubcategoria->titulo);
 
-                            $dtpdatospaginas = new dtpdatospaginas();
-                            $dtpdatospaginas->pagid           = $pagId;
-                            $dtpdatospaginas->fecid           = $fecid;
-                            $dtpdatospaginas->tpmid           = $tpmid;
-                            $dtpdatospaginas->dtpnombre       = $productosSubcategoria->titulo;
-                            $dtpdatospaginas->dtppagina       = $numeroPaginas;
-                            $dtpdatospaginas->dtpimagen       = $productosSubcategoria->imagen;
-                            $dtpdatospaginas->dtpprecio       = $precioStringFinal;
-                            $dtpdatospaginas->dtpcategoria    = $categoria;
-                            $dtpdatospaginas->dtpurl          = $productosSubcategoria->url_desktop;
-                            $dtpdatospaginas->dtpstock        = $productosSubcategoria->estado_venta;
-                            $dtpdatospaginas->dtpmarca        = $productosSubcategoria->marcas;
-                            $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
-                            $dtpdatospaginas->save(); 
+                                $dtpdatospaginas = new dtpdatospaginas();
+                                $dtpdatospaginas->pagid           = $pagId;
+                                $dtpdatospaginas->fecid           = $fecid;
+                                $dtpdatospaginas->tpmid           = $tpmid;
+                                $dtpdatospaginas->dtpnombre       = $productosSubcategoria->titulo;
+                                $dtpdatospaginas->dtppagina       = $numeroPaginas;
+                                $dtpdatospaginas->dtpimagen       = $productosSubcategoria->imagen;
+                                $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                                $dtpdatospaginas->dtpcategoria    = $categoria;
+                                $dtpdatospaginas->dtpurl          = $productosSubcategoria->url_desktop;
+                                $dtpdatospaginas->dtpstock        = $productosSubcategoria->estado_venta;
+                                $dtpdatospaginas->dtpmarca        = $productosSubcategoria->marcas;
+                                $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
+                                $dtpdatospaginas->save(); 
+                            }
+                            $numeroPaginas = $numeroPaginas + 1;
+                        }else {
+                            $encontroPagina = false;
+                            break;
                         }
-                        $numeroPaginas = $numeroPaginas + 1;
-                    }else {
-                        $encontroPagina = false;
-                        break;
-                    }
-                }                
+                    }                
+                }
             }
         }
     }
