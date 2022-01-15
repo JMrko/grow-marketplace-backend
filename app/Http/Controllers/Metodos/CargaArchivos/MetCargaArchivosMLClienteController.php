@@ -29,6 +29,7 @@ class MetCargaArchivosMLClienteController extends Controller
         $audlog = '';
         $audtabla = 'carcargasarchivos';
         $audpk = '';
+        $urlproducto = 'https://www.softys.com/es/';
 
         $token  = $request->header('token');
         $fichero_subido = $request->file('archivo');
@@ -114,6 +115,7 @@ class MetCargaArchivosMLClienteController extends Controller
                 $dtpdatospaginas->dtpventasenunidxperiodo          = $ex_dtpventasenunidxperiodo;
                 $dtpdatospaginas->dtpconversionxperiodo            = $ex_dtpconversionxperiodo;
                 $dtpdatospaginas->dtpmercadolibre                  = $dtpmercadolibre;
+                $dtpdatospaginas->dtpurl                           = $urlproducto;
                 
                 if ($dtpdatospaginas->save()) {
                     $respuesta = true;

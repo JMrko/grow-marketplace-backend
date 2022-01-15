@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Metodos\ETL;
 use App\Http\Controllers\Controller;
 use App\Models\dtpdatospaginas;
 use App\Models\fecfechas;
+use App\Models\pdpproductosdatospaginas;
 use DateTime;
 use Goutte\Client;
 
@@ -253,53 +254,94 @@ class MetEtlObtenerDatosPaginasController extends Controller
         }
         return $dtpunidadmedida;
     }
+
+    public function obtenerProId($nombre, $sku, $pagid, $dtpid, $imagen = null)
+    {
+        $dtp = dtpdatospaginas::where('dtpnombre', $nombre)
+                                    ->where('dtpsku', $sku)
+                                    ->where('pagid', $pagid)
+                                    ->where('dtpid', "!=", $dtpid)
+                                    ->where('proid', "!=", null )
+                                    ->where('dtpimagen', $imagen)
+                                    ->first([
+                                        'proid',
+                                        'dtpskuhomologado'
+                                    ]);
+        if ($dtp) {
+            $dtpe = dtpdatospaginas::find($dtpid);
+            $dtpe->proid         = $dtp->proid;
+            $dtpe->skuhomologado = $dtp->dtpskuhomologado;
+            $dtpe->update();
+
+            $pdpc        = new pdpproductosdatospaginas();
+            $pdpc->proid = $dtp->proid;
+            $pdpc->dtpid = $dtpid;
+            $pdpc->empid = 1;
+            $pdpc->save();
+        }
+    }
     
     public function MetObtenerArcalauquen(Client $client)
     {
         $pagId = 1;
         $tpmid = 1;
         $dtpsigv = true;
+        $descuentoProducto = 0;
         $categoriasLink = array(
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.arcalauquen.cl/15-papel-higienico?page=1',
-                'categoria'             => 'Papel Higienico'
+                'categoria'             => 'Papel Higienico',
+                'palabraclave'          => 'Papel Higiénico'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.arcalauquen.cl/16-toallas?page=1',
-                'categoria'             => 'Toalla de Papel'
+                'categoria'             => 'Toalla de Papel',
+                'palabraclave'          => 'Toalla de papel'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.arcalauquen.cl/8-detergentes-desinfectantes-y-jabones?page=1',
-                'categoria'             => 'Jabon'
+                'categoria'             => 'Jabon',
+                'palabraclave'          => 'Jabón, Alcohol, Lavalozas, Limpiavidrios, Desengrasante'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.arcalauquen.cl/4-dispensadores?page=1',
+                'categoria'             => 'Dispensador',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.arcalauquen.cl/19-servilletas?page=1',
-                'categoria'             => 'Servilleta'
+                'categoria'             => 'Servilleta',
+                'palabraclave'          => 'Servilleta'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.arcalauquen.cl/20-panuelos-desechables?page=1',
-                'categoria'             => 'Pañuelo'
+                'categoria'             => 'Pañuelo',
+                'palabraclave'          => 'Pañuelo'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.arcalauquen.cl/17-sabanillas?page=1',
-                'categoria'             => 'Sabanilla'
+                'categoria'             => 'Sabanilla',
+                'palabraclave'          => 'Sabanilla'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.arcalauquen.cl/18-panos-de-limpieza?page=1',
-                'categoria'             => 'Paños'
+                'categoria'             => 'Paños',
+                'palabraclave'          => 'Paños de limpieza'
             ]
-            );
+        );
         
         if($this->validarDataPorFecha(1, true)){
             foreach ($categoriasLink as $categoriaLink) { 
                 $paginaURLPages = $categoriaLink->linkCategoriaProducto;
+                $palabraclave = $categoriaLink->palabraclave;
                 $crawler = $client->request('GET', $paginaURLPages);
                 $posicion = $crawler->filter(".page-list > li")->count()-2;
                 $numeroPaginas = $crawler->filter(".page-list > li")->eq($posicion)->text('1');
@@ -312,7 +354,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $tituloCategoria = $crawler->filter("[class='h1 page-title']")->first()->text();
                     $pagina = $i;
 
-                    $crawler->filter(".js-product-miniature-wrapper")->each(function($node) use($pagina, $tituloCategoria, $pagId, $tpmid, $dtpsigv){
+                    $crawler->filter(".js-product-miniature-wrapper")->each(function($node) use($pagina, $tituloCategoria, $pagId, $tpmid, $dtpsigv, $descuentoProducto, $palabraclave){
                         $imagenProducto = $node->filter(".product-thumbnail > img")->attr('data-src');
                         $nombreProducto = $node->filter("[class='h3 product-title']")->text();
                         $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
@@ -323,8 +365,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $descProducto = $node->filter(".product-description-short")->text();
                         $stockProducto = $node->filter("[class='product-availability d-block']")->text();
                         $skuProducto = $node->filter("[class='product-reference text-muted']")->text();
-                        $ofertaProducto = $node->filter("[class='product-flag on-sale']")->text('Sin oferta');
-            
+                        $ofertaProducto = $node->filter("[class='product-flag on-sale']")->text('¡Sin Oferta!');
+                        
                         $fecid = $this->validarDataPorFecha(1);
 
                         $dtpdatospaginas = new dtpdatospaginas();
@@ -332,7 +374,10 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->pagid           = $pagId;
                         $dtpdatospaginas->tpmid           = $tpmid;
                         $dtpdatospaginas->dtpnombre       = $nombreProducto;
-                        $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                        $dtpdatospaginas->dtpprecioreal   = $precioStringFinal;
+                        $dtpdatospaginas->dtpprecioactual = $precioStringFinal;
+                        $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
+                        $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                         $dtpdatospaginas->dtpurl          = $urlProducto;
                         $dtpdatospaginas->dtpimagen       = $imagenProducto;
                         $dtpdatospaginas->dtpdesclarga    = $descProducto;
@@ -342,8 +387,11 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->dtpsku          = $skuProducto;
                         $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
                         $dtpdatospaginas->dtpsigv         = $dtpsigv;
-                        $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
-                        $dtpdatospaginas->save();
+                        $dtpdatospaginas->dtppalabraclave = $palabraclave;
+                        
+                        if($dtpdatospaginas->save()){
+                           $this->obtenerProId($nombreProducto, $skuProducto, $pagId, $dtpdatospaginas->id, $imagenProducto);
+                        }
                     });
                 }
             }
@@ -355,54 +403,66 @@ class MetEtlObtenerDatosPaginasController extends Controller
         $pagId = 2;
         $tpmid = 1;
         $dtpsigv = true;
+        $ofertaProducto = "¡Sin Oferta!";
+        $descuentoProducto = 0;
         $categoriasLink = array(
             (object)
             [
                 'linkCategoriaProducto' => 'https://torkalpormayor.cl/collections/papel-higienico',
-                'categoria'             => 'Papel Higienico'
+                'categoria'             => 'Papel Higienico',
+                'palabraclave'          => 'Papel Higiénico'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://torkalpormayor.cl/collections/toalla-en-rollo',
-                'categoria'             => 'Toalla en rollo'
+                'categoria'             => 'Toalla en rollo',
+                'palabraclave'          => 'Toalla'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://torkalpormayor.cl/collections/toalla-interfoliada',
-                'categoria'             => 'Toalla Interfoliada'
+                'categoria'             => 'Toalla Interfoliada',
+                'palabraclave'          => 'Toalla'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://torkalpormayor.cl/collections/jabon',
-                'categoria'             => 'Jabon'
+                'categoria'             => 'Jabon',
+                'palabraclave'          => 'Jabón'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://torkalpormayor.cl/collections/insumos/servilletas',
-                'categoria'             => 'Servilleta'
+                'categoria'             => 'Servilleta',
+                'palabraclave'          => 'Servilleta'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://torkalpormayor.cl/collections/sabanilla-medica',
-                'categoria'             => 'Sabanilla Medica'
+                'categoria'             => 'Sabanilla Medica',
+                'palabraclave'          => 'Sabanilla'
             ]
         );
         if($this->validarDataPorFecha(2, true)){
             foreach ($categoriasLink as $categoriaLink) {
 
                 $paginaURL = $categoriaLink->linkCategoriaProducto;
+                $palabraclave = $categoriaLink->palabraclave;
                 $crawler = $client->request('GET', $paginaURL);
                 $tituloCategoria = $categoriaLink->categoria;
-                $crawler->filter(".product-grid-item")->each(function($node) use($pagId, $tituloCategoria, $tpmid, $dtpsigv){
+                $crawler->filter(".product-grid-item")->each(function($node) use($pagId, $tituloCategoria, $tpmid, $dtpsigv, $ofertaProducto, $descuentoProducto, $palabraclave){
                     $imagenProducto = $node->filter(".lazy-image > img")->attr('data-src');
+                    $partesStringImagen = explode("{width}",$imagenProducto);
+                    $imagenProductoConcatenado = "$partesStringImagen[0]540$partesStringImagen[1]";
                     $nombreProducto = $node->filter("[class='h5--accent strong name_wrapper']")->text();
                     $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                     $precioProducto = $node->filter("[class='money']")->text();
                     $precioString = explode("$",$precioProducto);
                     $precioStringFinal = trim($precioString[1]);
                     $urlProducto = $node->filter(".lazy-image")->attr('href');
+                    $urlProductoConcatenado = "https://torkalpormayor.cl$urlProducto";
                     $stockProducto = $node->filter("[class='sticker sticker--sold']")->text('En stock');
-                    
+
                     $fecid = $this->validarDataPorFecha(2);
                     
                     $dtpdatospaginas = new dtpdatospaginas();
@@ -410,14 +470,21 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas->fecid           = $fecid;
                     $dtpdatospaginas->tpmid           = $tpmid; 
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
-                    $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                    $dtpdatospaginas->dtpprecioactual = $precioStringFinal;
+                    $dtpdatospaginas->dtpprecioreal   = $precioStringFinal;
+                    $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
+                    $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
-                    $dtpdatospaginas->dtpurl          = $urlProducto;
-                    $dtpdatospaginas->dtpimagen       = $imagenProducto; 
+                    $dtpdatospaginas->dtpurl          = $urlProductoConcatenado;
+                    $dtpdatospaginas->dtpimagen       = $imagenProductoConcatenado; 
                     $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
                     $dtpdatospaginas->dtpsigv         = $dtpsigv;
                     $dtpdatospaginas->dtpstock        = $stockProducto;
-                    $dtpdatospaginas->save();
+                    $dtpdatospaginas->dtppalabraclave = $palabraclave;
+
+                    if($dtpdatospaginas->save()){
+                        $this->obtenerProId($nombreProducto, null, $pagId, $dtpdatospaginas->id, $imagenProducto);
+                    }
                 });
             }
         } 
@@ -427,36 +494,43 @@ class MetEtlObtenerDatosPaginasController extends Controller
     {
         $pagId = 3;
         $tpmid = 1;
+        $descuentoProducto = 0;
+        $ofertaProducto = "¡Sin Oferta!";
         $categoriasLink = array(
             (object)
             [
                 'linkCategoriaProducto' => 'https://dipisa.cl/tipo_tissues/papel-higienico/',
-                'categoria'             => 'Papel Higienico'
+                'categoria'             => 'Papel Higienico',
+                'palabraclave'          => 'Papel Higiénico'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dipisa.cl/tipo_tissues/toallas-de-papel/',
-                'categoria'             => 'Toallas de Papel'
+                'categoria'             => 'Toallas de Papel',
+                'palabraclave'          => 'Toalla'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dipisa.cl/tipo_tissues/dispensador/',
-                'categoria'             => 'Dispensador'
+                'categoria'             => 'Dispensador',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dipisa.cl/tipo_tissues/sabanilla/',
-                'categoria'             => 'Sabanilla'
+                'categoria'             => 'Sabanilla',
+                'palabraclave'          => 'Sabanilla'
             ],
         );
         if($this->validarDataPorFecha(3, true)){
             foreach ($categoriasLink as $categoriaLink) {
 
                 $paginaURL = $categoriaLink->linkCategoriaProducto;
+                $palabraclave = $categoriaLink->palabraclave;
                 $crawler = $client->request('GET', $paginaURL);
                 $tituloCategoria = $crawler->filter("[class='col-md-12 text-center']")->first()->text();
 
-                $crawler->filter("[class='col-md-4 mb50']")->each(function($node) use($tituloCategoria, $pagId, $tpmid, $paginaURL){
+                $crawler->filter("[class='col-md-4 mb50']")->each(function($node) use($tituloCategoria, $pagId, $tpmid, $paginaURL, $descuentoProducto, $ofertaProducto,$palabraclave){
                     $imagenProducto = $node->filter(".box-contenido > img")->attr('src');
                     $nombrePrecioProducto = $node->filter("h5")->text();
                     $nombreProducto = explode ("Un.", $nombrePrecioProducto);
@@ -481,11 +555,17 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                     $dtpdatospaginas->dtpmarca        = $marcaProducto;
                     $dtpdatospaginas->dtpsku          = $skuProducto;
-                    $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                    $dtpdatospaginas->dtpprecioreal   = $precioStringFinal;
+                    $dtpdatospaginas->dtpprecioactual = $precioStringFinal;
+                    $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
+                    $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                     $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;  
                     $dtpdatospaginas->dtpsigv         = $igvProducto;
                     $dtpdatospaginas->dtpurl          = $paginaURL;
-                    $dtpdatospaginas->save();
+                    $dtpdatospaginas->dtppalabraclave = $palabraclave;
+                    if($dtpdatospaginas->save()){
+                        $this->obtenerProId($nombreProducto, $skuProducto, $pagId, $dtpdatospaginas->id, $imagenProducto);
+                    }
                 });
             }
         }
@@ -500,73 +580,99 @@ class MetEtlObtenerDatosPaginasController extends Controller
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.avalco.cl/167-papel-higienico?page=1',
-                'categoria'             => 'Papel Higienico'
+                'categoria'             => 'Papel Higienico',
+                'palabraclave'          => 'Papel Higiénico'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.avalco.cl/165-papel-higienico-jumbo?page=1',
-                'categoria'             => 'Papel Higiénico Jumbo'
+                'categoria'             => 'Papel Higiénico Jumbo',
+                'palabraclave'          => 'Papel Higiénico'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.avalco.cl/166-toallas-interfoliadas?page=1',
-                'categoria'             => 'Toallas Interfoliadas'
+                'categoria'             => 'Toallas Interfoliadas',
+                'palabraclave'          => 'Toalla de papel'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.avalco.cl/61-papeles-higienicos-y-toallas-de-papel?page=1',
-                'categoria'             => 'Papel Higienico y Toallas de Papel'
+                'categoria'             => 'Papel Higienico y Toallas de Papel',
+                'palabraclave'          => 'Toalla de papel, Papel Higiénico, Sabanilla'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.avalco.cl/73-jabones?page=1',
-                'categoria'             => 'Jabon'
+                'categoria'             => 'Jabon',
+                'palabraclave'          => 'Jabón'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.avalco.cl/126-servilletas-de-papel?page=1',
-                'categoria'             => 'Servilleta'
+                'categoria'             => 'Servilleta',
+                'palabraclave'          => 'Servilleta'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.avalco.cl/22-dispensadores-de-jabon?page=1',
-                'categoria'             => 'Dispensador de Jabon'
+                'categoria'             => 'Dispensador de Jabon',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.avalco.cl/23-dispensadores-de-papel?page=1',
-                'categoria'             => 'Dispensador de Papel'
+                'categoria'             => 'Dispensador de Papel',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.avalco.cl/139-alcohol-desnaturalizado?page=1',
-                'categoria'             => 'Jabon Desnaturalizado'
+                'categoria'             => 'Alcohol Desnaturalizado',
+                'palabraclave'          => 'Alcohol'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.avalco.cl/131-alcohol-etilico?page=1',
-                'categoria'             => 'Alcochol Etilico'
+                'categoria'             => 'Alcochol Etilico',
+                'palabraclave'          => 'Alcohol'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.avalco.cl/129-alcohol-gel?page=1',
-                'categoria'             => 'Alcohol Gel'
+                'categoria'             => 'Alcohol Gel',
+                'palabraclave'          => 'Alcohol'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.avalco.cl/130-alcohol-isopropilico?page=1',
-                'categoria'             => 'Alcohol Isopropilico'
+                'categoria'             => 'Alcohol Isopropilico',
+                'palabraclave'          => 'Alcohol'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.avalco.cl/40-desengrasantes?page=1',
-                'categoria'             => 'Desengrasante'
+                'categoria'             => 'Desengrasante',
+                'palabraclave'          => 'Desengrasante'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.avalco.cl/29-limpiadores-multiuso?page=1',
+                'categoria'             => 'Limpiadores multiuso',
+                'palabraclave'          => 'Limpiavidrios, Lavalozas'
+            ],
+            (object)
+            [
+                'linkCategoriaProducto' => 'https://www.avalco.cl/64-implementos-limpieza?page=1',
+                'categoria'             => 'Implementos de limpieza',
+                'palabraclave'          => 'Paños'
             ],
         );
         if($this->validarDataPorFecha(4, true)){
             foreach ($categoriasLink as $categoriaLink) {
 
                 $paginaURLPages = $categoriaLink->linkCategoriaProducto;
+                $palabraclave = $categoriaLink->palabraclave;
                 $crawler = $client->request('GET', $paginaURLPages);
                 $posicion = $crawler->filter(".page-list > li")->count()-2;
                 $numeroPaginas = $crawler->filter(".page-list > li")->eq($posicion)->text('1');
@@ -580,20 +686,24 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $tituloCategoria = $crawler->filter("[class='page-heading js-category-page']")->first()->text();
                     $pagina = $i;
                     
-                    $crawler->filter("[class='product-miniature product-style js-product-miniature']")->each(function($node) use($tituloCategoria, $pagina, $pagId, $tpmid, $dtpsigv){
+                    $crawler->filter("[class='product-miniature product-style js-product-miniature']")->each(function($node) use($tituloCategoria, $pagina, $pagId, $tpmid, $dtpsigv,$palabraclave){
                         $imagenProducto = $node->filter(".product-cover-link > img")->attr('src');
                         $nombreProducto = $node->filter(".product-name")->text();
                         $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
-                        $precioProducto = $node->filter("[class='price product-price']")->text();
-                        $precioString = explode("$",$precioProducto);
+                        $precioActualProducto = $node->filter("[class='price product-price']")->text();
+                        $precioString = explode("$",$precioActualProducto);
                         $precioStringFinal = trim($precioString[0]);
+                        $precioRegularProducto = $node->filter("[class='regular-price']")->text($precioStringFinal);
+                        $precioregularString = explode("$",$precioRegularProducto);
+                        $precioregularStringFinal = trim($precioregularString[0]);
                         $urlProducto = $node->filter(".product-name > a")->attr('href');
                         $stringSkuProducto = $node->filter(".second-block > h4")->text();
                         $skuProducto = explode ("Ref:", $stringSkuProducto);
                         $stockProducto = $node->filter(".available")->text('-');
                         $descProducto = $node->filter(".product-description-short")->text();
-                        $descuentoProducto = $node->filter("[class='product-flag discount']")->text('Sin descuento');
-                        
+                        $descuentoProducto = $node->filter("[class='product-flag discount']")->text('0');
+                        $ofertaProducto = $node->filter("[class='product-flag on-sale']")->text('¡Sin Oferta!');
+
                         $fecid = $this->validarDataPorFecha(4);
 
                         $dtpdatospaginas = new dtpdatospaginas();
@@ -604,7 +714,9 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->dtpimagen       = $imagenProducto;
                         $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                         $dtpdatospaginas->dtpurl          = $urlProducto;
-                        $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                        $dtpdatospaginas->dtpprecioactual = $precioStringFinal;
+                        $dtpdatospaginas->dtpprecioreal   = $precioregularStringFinal;
+                        $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                         $dtpdatospaginas->dtppagina       = $pagina;
                         $dtpdatospaginas->dtpstock        = $stockProducto;
                         $dtpdatospaginas->dtpsku          = $skuProducto[1];
@@ -612,7 +724,10 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
                         $dtpdatospaginas->dtpsigv         = $dtpsigv;
                         $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
-                        $dtpdatospaginas->save();
+                        $dtpdatospaginas->dtppalabraclave = $palabraclave;
+                        if($dtpdatospaginas->save()){
+                            $this->obtenerProId($nombreProducto, $skuProducto[1], $pagId, $dtpdatospaginas->id, $imagenProducto);
+                        }
                     });
                 }
             }
@@ -624,120 +739,143 @@ class MetEtlObtenerDatosPaginasController extends Controller
     {
         $pagId = 5;
         $tpmid = 1;
+        $descuentoProducto = 0;
+        $ofertaProducto = "¡Sin Oferta!";
         $categoriasLink = array(
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/papel-higienico/',
-                'categoria'             => 'Papel Higienico'
+                'categoria'             => 'Papel Higienico',
+                'palabraclave'          => 'Papel Higiénico'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/toalla-de-papel/',
-                'categoria'             => 'Toalla de Papel'
+                'categoria'             => 'Toalla de Papel',
+                'palabraclave'          => 'Toalla de papel'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/jabones/',
-                'categoria'             => 'Jabon'
+                'categoria'             => 'Jabon',
+                'palabraclave'          => 'Jabón'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/papel-higienico/dispensador-papel-higienico-bajo-metraje/',
-                'categoria'             => 'Dispensador de Papel Higienico de Bajo Metraje'
+                'categoria'             => 'Dispensador de Papel Higienico de Bajo Metraje',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/papel-higienico/dispensador-papel-higienico-bajo-metraje-interfoliado/',
-                'categoria'             => 'Dispensador de Papel Higienico de Bajo Metraje Interfoliado'
+                'categoria'             => 'Dispensador de Papel Higienico de Bajo Metraje Interfoliado',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/papel-higienico/dispensador-papel-higienico-alto-metraje/',
-                'categoria'             => 'Dispensador de Papel Higienico de Alto Metraje'
+                'categoria'             => 'Dispensador de Papel Higienico de Alto Metraje',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/servilleta/dispensador-servilleta-express/',
-                'categoria'             => 'Servilleta Express'
+                'categoria'             => 'Servilleta Express',
+                'palabraclave'          => 'Dispensador'
             ],(object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/servilleta/dispensador-servilleta-mesa/',
-                'categoria'             => 'Servilleta Mesa'
+                'categoria'             => 'Servilleta Mesa',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/sabanillas/dispensador-sabanillas/',
-                'categoria'             => 'Dispensador de Sabanilla'
+                'categoria'             => 'Dispensador de Sabanilla',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/accesorios-de-bano/cobertor-w-c/dispensador-cobertor-w-c/',
-                'categoria'             => 'Dispensador Cobertor W.C'
+                'categoria'             => 'Dispensador Cobertor W.C',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/jabones/jabon-rellenable/dispensador-jabon-rellenable/',
-                'categoria'             => 'Dispensador de Jabon Rellenable'
+                'categoria'             => 'Dispensador de Jabon Rellenable',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/jabones/jabon-multiflex/dispensador-jabon-multiflex/',
-                'categoria'             => 'Dispensador de Jabon Multiflex'
+                'categoria'             => 'Dispensador de Jabon Multiflex',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/panos-de-limpieza/dispensador-panos-de-limpieza/',
-                'categoria'             => 'Dispensador de Panos de Limpieza'
+                'categoria'             => 'Dispensador de Panos de Limpieza',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/servilleta/',
-                'categoria'             => 'Servilleta'
+                'categoria'             => 'Servilleta',
+                'palabraclave'          => 'Servilleta'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/sabanillas/',
-                'categoria'             => 'Sabanilla'
+                'categoria'             => 'Sabanilla',
+                'palabraclave'          => 'Sabanilla'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/panal-para-adultos/',
-                'categoria'             => 'Panal para adultos'
+                'categoria'             => 'Panal para adultos',
+                'palabraclave'          => 'Pañal'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/panos-de-limpieza/',
-                'categoria'             => 'Panos de Limpieza'
+                'categoria'             => 'Panos de Limpieza',
+                'palabraclave'          => 'Paños de limpieza'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/higiene-y-cuidados/alcohol-gel/',
-                'categoria'             => 'Alcohol Gel'
+                'categoria'             => 'Alcohol Gel',
+                'palabraclave'          => 'Alcohol'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/productos-de-limpieza/lavalozas/',
-                'categoria'             => 'Lavalozas'
+                'categoria'             => 'Lavalozas',
+                'palabraclave'          => 'Lavalozas'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/productos-de-limpieza/limpiavidrios/',
-                'categoria'             => 'Limpiavidrios'
+                'categoria'             => 'Limpiavidrios',
+                'palabraclave'          => 'Limpiavidrios'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://dilenchile.cl/categoria-producto/productos-de-limpieza/desengrasante/',
-                'categoria'             => 'Desengrasantes'
+                'categoria'             => 'Desengrasantes',
+                'palabraclave'          => 'Desengrasante'
             ],                    
         );
         if($this->validarDataPorFecha(5, true)){
             foreach ($categoriasLink as $categoriaLink) {
-
                 $paginaURL = $categoriaLink->linkCategoriaProducto;
+                $palabraclave = $categoriaLink->palabraclave;
                 $crawler = $client->request('GET', $paginaURL);
                 $tituloCategoria = $crawler->filter(".title")->text();
 
-                $crawler->filter(".isotope-item")->each(function($node) use($tituloCategoria, $pagId, $tpmid){
+                $crawler->filter(".isotope-item")->each(function($node) use($tituloCategoria, $pagId, $tpmid,$descuentoProducto,$ofertaProducto,$palabraclave){
                     $imagenProducto = $node->filter("[class='scale-with-grid wp-post-image']")->attr('src');
                     $nombreProducto = $node->filter(".desc > h4")->text();
                     $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
@@ -756,11 +894,17 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
                     $dtpdatospaginas->dtpurl          = $urlProducto;
                     $dtpdatospaginas->dtpimagen       = $imagenProducto;
-                    $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                    $dtpdatospaginas->dtpprecioactual = $precioStringFinal;
+                    $dtpdatospaginas->dtpprecioreal   = $precioStringFinal;
+                    $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
+                    $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                     $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
                     $dtpdatospaginas->dtpstock        = $stockProducto;
-                    $dtpdatospaginas->save();
+                    $dtpdatospaginas->dtppalabraclave = $palabraclave;
+                    if($dtpdatospaginas->save()){
+                        $this->obtenerProId($nombreProducto, null, $pagId, $dtpdatospaginas->id, $imagenProducto);
+                    }
                 });
             }
         }
@@ -774,72 +918,84 @@ class MetEtlObtenerDatosPaginasController extends Controller
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/cat4830002/Papeles?currentpage=1&=&f.product.attribute.Tipo=papel%2520higienico',
-                'categoria'             => 'Papel Higienico'
+                'categoria'             => 'Papel Higienico',
+                'palabraclave'          => 'Papel Higiénico, Pañuelo'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/cat4830002/Papeles?currentpage=1&=&f.product.attribute.Tipo=toalla',
-                'categoria'             => 'Toalla de Papel'
+                'categoria'             => 'Toalla de Papel',
+                'palabraclave'          => 'Toalla de papel'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/search?Ntt=servilleta&currentpage=1',
-                'categoria'             => 'Servilleta'
+                'categoria'             => 'Servilleta',
+                'palabraclave'          => 'Servilleta'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/cat4850181?currentpage=1&=&f.product.attribute.Tipo=dispensadores%2520de%2520jabon',
-                'categoria'             => 'Dispensador de Jabon'
+                'categoria'             => 'Dispensador de Jabon',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/search?Ntt=dispensador%20de%20servilleta?currentpage=1',
-                'categoria'             => 'Dispensador de Servilleta'
+                'categoria'             => 'Dispensador de Servilleta',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/scat963514/Limpieza?Ntt=dispensadores&sTerm=dispensadores&sType=category&sScenario=BTP_CAT_dispensadores&currentpage=1&f.product.attribute.Tipo=dispensador%2520papel%2520higienico',
-                'categoria'             => 'Dispensador de Papel Higienico'
+                'categoria'             => 'Dispensador de Papel Higienico',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/scat963514/Limpieza?Ntt=jabones%20alcohol&sTerm=jabones&sType=category&sScenario=BTP_CAT_jabones%20alcohol&currentpage=1&f.product.attribute.Tipo=jabon',
-                'categoria'             => 'Jabon'
+                'categoria'             => 'Jabon',
+                'palabraclave'          => 'Jabón'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/cat9230001/Insumos-Medicos?currentpage=1',
-                'categoria'             => 'Sabanillas'
+                'categoria'             => 'Sabanillas',
+                'palabraclave'          => 'Sabanilla'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/cat11540001/Proteccion-Sanitaria?currentpage=1&=&f.product.attribute.Tipo=alcohol%3A%3Aalcohol%2520gel',
-                'categoria'             => 'Alcohol Gel'
+                'categoria'             => 'Alcohol Gel',
+                'palabraclave'          => 'Alcohol'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/cat4850292/Limpiadores-de-cocina?currentpage=1&=&f.product.attribute.Tipo=lavalozas',
-                'categoria'             => 'Lavalozas'
+                'categoria'             => 'Lavalozas',
+                'palabraclave'          => 'Lavalozas'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/category/cat4850294/Limpiadores-Especificos?currentpage=1&=&f.product.attribute.Tipo=limpiavidrios',
-                'categoria'             => 'Limpiavidrios'
+                'categoria'             => 'Limpiavidrios',
+                'palabraclave'          => 'Limpiavidrios'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.sodimac.cl/sodimac-cl/search?Ntt=desengrasantes&currentpage=1&f.product.attribute.Tipo=desengrasante',
-                'categoria'             => 'Desengrasantes'
+                'categoria'             => 'Desengrasantes',
+                'palabraclave'          => 'Desengrasante'
             ],
         );
         if($this->validarDataPorFecha(6, true)){
             foreach ($categoriasLink as $categoriaLink) {
                 $paginaURLPages = $categoriaLink->linkCategoriaProducto;
+                $palabraclave = $categoriaLink->palabraclave;
                 $crawler = $client->request('GET', $paginaURLPages);
                 $numeroPaginas = $crawler->filter("[class='jsx-4278284191 page-item page-index ']")->last()->text('1');
 
-                for($i=1; $i<=$numeroPaginas; ++$i)
-                {
+                for($i=1; $i<=$numeroPaginas; ++$i){
                     $nuevaURLPage = explode('currentpage=1', $paginaURLPages);
                     $primerStringSeleccionado = $nuevaURLPage[0];
                     if ($nuevaURLPage[1]) {
@@ -853,7 +1009,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $tituloCategoria = $crawler->filter("[class='jsx-245626150 category-title']")->text($categoriaLink->categoria);
                     $pagina = $i;
 
-                    $crawler->filter("[class='jsx-411745769 product ie11-product-container']")->each(function($node) use($tituloCategoria, $pagina, $pagId, $tpmid){
+                    $crawler->filter("[class='jsx-411745769 product ie11-product-container']")->each(function($node) use($tituloCategoria, $pagina, $pagId, $tpmid, $palabraclave){
                         $imagenProducto = $node->filter("[class='image-contain ie11-image-contain  __lazy']")->attr('data-src');
                         $nombreProducto = $node->filter("[class='jsx-411745769 product-title']")->text();
                         $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
@@ -874,7 +1030,9 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->dtpnombre       = $nombreProducto;
                         $dtpdatospaginas->dtpurl          = $urlProducto;
                         $dtpdatospaginas->dtpimagen       = $imagenProducto;
-                        $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                        $dtpdatospaginas->dtpprecioactual = $precioStringFinal;
+                        $dtpdatospaginas->dtpprecioreal   = $precioStringFinal;
+                        // $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
                         $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                         $dtpdatospaginas->dtpmarca        = $marcaProducto;
                         $dtpdatospaginas->dtppagina       = $pagina;
@@ -882,7 +1040,9 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->dtpstock        = $stockProducto;
                         $dtpdatospaginas->dtpmercadoenvio = $envioProducto;
                         $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
-                        $dtpdatospaginas->save();
+                        $dtpdatospaginas->dtppalabraclave = $palabraclave;
+                        // $dtpdatospaginas->save();
+                        dd($dtpdatospaginas);
                     });
                 }
             }
@@ -897,42 +1057,50 @@ class MetEtlObtenerDatosPaginasController extends Controller
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.dpronto.cl/product-category/dispensadores-de-jabon/',
-                'categoria'             => 'Dispensador de Jabon'
+                'categoria'             => 'Dispensador de Jabon',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.dpronto.cl/product-category/dispensadores-de-jabon-papel-hig-toalla/',
-                'categoria'             => 'Dispensador de Jabon Papel Hig. Toalla'
+                'categoria'             => 'Dispensador de Jabon Papel Hig. Toalla',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.dpronto.cl/product-category/productos-de-limpieza/jabones/',
-                'categoria'             => 'Jabones'
+                'categoria'             => 'Jabones',
+                'palabraclave'          => 'Jabón'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.dpronto.cl/product-category/productos-de-limpieza/papeles-higienicos/',
-                'categoria'             => 'Papeles Higienicos'
+                'categoria'             => 'Papeles Higienicos',
+                'palabraclave'          => 'Papel Higiénico'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.dpronto.cl/product-category/productos-de-limpieza/toallas-de-papel-y-servilletas/',
-                'categoria'             => 'Toallas de Papel y Servilletas'
+                'categoria'             => 'Toallas de Papel y Servilletas',
+                'palabraclave'          => 'Servilleta, Toalla de papel, Sabanilla'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.dpronto.cl/product-category/productos-de-limpieza/lavalozas-y-desengrasantes/',
-                'categoria'             => 'Lavalozas y Desengrasantes'
+                'categoria'             => 'Lavalozas y Desengrasantes',
+                'palabraclave'          => 'Lavalozas, Desengrasante'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.dpronto.cl/product-category/productos-de-limpieza/limpiavidrios/',
-                'categoria'             => 'Limpiavidrios'
+                'categoria'             => 'Limpiavidrios',
+                'palabraclave'          => 'Limpiavidrios'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.dpronto.cl/product-category/productos-de-limpieza/desinfectantes-sanitizantes-enzimaticos/',
-                'categoria'             => 'Desinfectantes Sanitizantes Enzimaticos'
+                'categoria'             => 'Desinfectantes Sanitizantes Enzimaticos',
+                'palabraclave'          => 'Alcohol'
             ],
         );
 
@@ -940,18 +1108,31 @@ class MetEtlObtenerDatosPaginasController extends Controller
             foreach ($categoriasLink as $categoriaLink) {
 
                 $paginaURL = $categoriaLink->linkCategoriaProducto;
+                $palabraclave = $categoriaLink->palabraclave;
                 $crawler = $client->request('GET', $paginaURL);
                 $tituloCategoria = $categoriaLink->categoria;
                 
-                $crawler->filter("[class='product-small box ']")->each(function($node) use($tituloCategoria, $pagId, $tpmid){
+                $crawler->filter("[class='product-small box ']")->each(function($node) use($tituloCategoria, $pagId, $tpmid, $palabraclave){
                     $imagenProducto = $node->filter(".image-zoom > a > img")->attr('data-src');
                     $nombreProducto = $node->filter("[class='woocommerce-LoopProduct-link woocommerce-loop-product__link']")->text();
                     $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                     $urlProducto = $node->filter("[class='woocommerce-LoopProduct-link woocommerce-loop-product__link']")->attr('href');
                     $precioProducto = $node->filter("[class='woocommerce-Price-amount amount']")->text();
-                    $precioString = explode("$",$precioProducto);
-                    $precioStringFinal = trim($precioString[1]);
+                    $preciorealString = explode("$",$precioProducto);
+                    $preciorealStringFinal = trim($preciorealString[1]);
+                    $precioactualProducto = $node->filter("[class='woocommerce-Price-amount amount']")->last()->text($preciorealStringFinal);
+                    $precioactualString = explode("$",$precioactualProducto);
+                    $precioactualStringFinal = trim($precioactualString[1]);
                     $stockProducto = $node->filter("[class='out-of-stock-label']")->text("Stock");
+                    if ($precioactualStringFinal <= $preciorealStringFinal) {
+                        $descuentoProducto = $preciorealStringFinal - $precioactualStringFinal;
+                    }
+                    if ($descuentoProducto > 0) {
+                        $ofertaProducto = "¡Con Oferta!";
+                    }else{
+                        $ofertaProducto = "¡Sin Oferta!";
+                    }
+
                     $fecid = $this->validarDataPorFecha(7);
 
                     $dtpdatospaginas = new dtpdatospaginas();
@@ -961,11 +1142,17 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
                     $dtpdatospaginas->dtpurl          = $urlProducto;
                     $dtpdatospaginas->dtpimagen       = $imagenProducto;
-                    $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                    $dtpdatospaginas->dtpprecioreal   = $preciorealStringFinal;
+                    $dtpdatospaginas->dtpprecioactual = $precioactualStringFinal;
+                    $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
+                    $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                     $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
                     $dtpdatospaginas->dtpstock        = $stockProducto;
-                    $dtpdatospaginas->save();   
+                    $dtpdatospaginas->dtppalabraclave = $palabraclave;
+                    if($dtpdatospaginas->save()){
+                        $this->obtenerProId($nombreProducto, null, $pagId, $dtpdatospaginas->id, $imagenProducto);
+                    }  
                 });
             }
         }
@@ -979,69 +1166,87 @@ class MetEtlObtenerDatosPaginasController extends Controller
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.comcer.cl/store/categoria-producto/papeles/papeles-higienicos-formato-hogar-y-jumbo/',
-                'categoria'             => 'Papel Higienico'
+                'categoria'             => 'Papel Higienico',
+                'palabraclave'          => 'Papel Higiénico'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.comcer.cl/store/categoria-producto/papeles/toalla-de-papel/',
-                'categoria'             => 'Toalla de Papel'
+                'categoria'             => 'Toalla de Papel',
+                'palabraclave'          => 'Toalla de papel'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.comcer.cl/store/categoria-producto/papeles/sabanillas/',
-                'categoria'             => 'Sabanillas'
+                'categoria'             => 'Sabanillas',
+                'palabraclave'          => 'Sabanilla'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.comcer.cl/store/categoria-producto/papeles/servilletas/',
-                'categoria'             => 'Servilletas'
+                'categoria'             => 'Servilletas',
+                'palabraclave'          => 'Servilleta'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.comcer.cl/store/categoria-producto/dispensadores/',
-                'categoria'             => 'Dispensadores'
+                'categoria'             => 'Dispensadores',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.comcer.cl/store/categoria-producto/jabones/',
-                'categoria'             => 'Jabon Gel'
+                'categoria'             => 'Jabon Gel',
+                'palabraclave'          => 'Jabón'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.comcer.cl/store/categoria-producto/panos/',
-                'categoria'             => 'Panos'
+                'categoria'             => 'Panos',
+                'palabraclave'          => 'Paños de limpieza'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.comcer.cl/store/categoria-producto/proteccion-covid-19/jabon-y-alcohol-gel/',
-                'categoria'             => 'Jabon y Alcohol Gel'
+                'categoria'             => 'Jabon y Alcohol Gel',
+                'palabraclave'          => 'Jabón, Alcohol'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.comcer.cl/store/categoria-producto/detergentes/lavalozas/',
-                'categoria'             => 'Lavalozas y Desengrasantes'
+                'categoria'             => 'Lavalozas y Desengrasantes',
+                'palabraclave'          => 'Lavalozas, Desengrasante'
             ],
         );
         if($this->validarDataPorFecha(8, true)){
             foreach ($categoriasLink as $categoriaLink) {
 
                 $paginaURL = $categoriaLink->linkCategoriaProducto;
+                $palabraclave = $categoriaLink->palabraclave;
                 $crawler = $client->request('GET', $paginaURL);
                 $tituloCategoria = $crawler->filter("[class='woocommerce-products-header__title page-title']")->text();
 
-                $crawler->filter(".products > li")->each(function($node) use($tituloCategoria, $pagId, $tpmid){
+                $crawler->filter(".products > li")->each(function($node) use($tituloCategoria, $pagId, $tpmid, $palabraclave){
                     $imagenProducto = $node->filter("[class='attachment-woocommerce_thumbnail size-woocommerce_thumbnail']")->attr('src');
                     $nombreProducto = $node->filter("[class='woocommerce-loop-product__title']")->text();
                     $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                     $urlProducto = $node->filter("[class='woocommerce-LoopProduct-link woocommerce-loop-product__link']")->attr('href');
-                    $precioProducto = $node->filter("[class='woocommerce-Price-amount amount']")->last()->text();
-                    $precioString = explode("$",$precioProducto);
-                    $precioStringFinal = trim($precioString[1]);
-                    $descuentoProducto = $node->filter("[class='b_span_text']")->text('No');
-                    if (stristr($descuentoProducto,'%')) {
-                       $descuentoProducto = 'Si';
+                    $preciorealProducto = $node->filter("[class='woocommerce-Price-amount amount']")->first()->text();
+                    $preciorealString = explode("$",$preciorealProducto);
+                    $preciorealStringFinal = trim($preciorealString[1]);
+                    $preciorealStringFinalSinPunto = str_replace(array("."), '', $preciorealStringFinal);
+                    $precioactualProducto = $node->filter("[class='woocommerce-Price-amount amount']")->last()->text($preciorealStringFinal);
+                    $precioactualString = explode("$",$precioactualProducto);
+                    $precioactualStringFinal = trim($precioactualString[1]);
+                    $precioactualStringFinalSinPunto = str_replace(array("."), '', $precioactualStringFinal);
+                    if ($precioactualStringFinalSinPunto <= $preciorealStringFinalSinPunto) {
+                        $descuentoProducto = $preciorealStringFinalSinPunto - $precioactualStringFinalSinPunto;
                     }
-                    $ofertaProducto = ($descuentoProducto == 'Si') ? '¡En Oferta!' : '¡Sin Oferta!';
+                    if ($descuentoProducto > 0) {
+                        $ofertaProducto = "¡Con Oferta!";
+                    }else{
+                        $ofertaProducto = "¡Sin Oferta!";
+                    }
 
                     $fecid = $this->validarDataPorFecha(8);
 
@@ -1052,12 +1257,16 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
                     $dtpdatospaginas->dtpurl          = $urlProducto;
                     $dtpdatospaginas->dtpimagen       = $imagenProducto;
-                    $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                    $dtpdatospaginas->dtpprecioreal   = $preciorealStringFinalSinPunto;
+                    $dtpdatospaginas->dtpprecioactual = $precioactualStringFinalSinPunto;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                     $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
                     $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
                     $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
-                    $dtpdatospaginas->save();  
+                    $dtpdatospaginas->dtppalabraclave = $palabraclave;
+                    if($dtpdatospaginas->save()){
+                        $this->obtenerProId($nombreProducto, null, $pagId, $dtpdatospaginas->id, $imagenProducto);
+                    } 
                 });
             }
         }
@@ -1067,81 +1276,98 @@ class MetEtlObtenerDatosPaginasController extends Controller
     {
         $pagId = 9;
         $tpmid = 1;
+        $descuentoProducto = 0;
+        $ofertaProducto = "¡Sin Oferta!";
         $categoriasLink = array(
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.ofimaster.cl/papel-tissue/papel-higienico?page=1',
-                'categoria'             => 'Papel Higienico'
+                'categoria'             => 'Papel Higienico',
+                'palabraclave'          => 'Papel Higiénico'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.ofimaster.cl/papel-tissue/toalla-de-papel?page=1',
-                'categoria'             => 'Toalla de Papel'
+                'categoria'             => 'Toalla de Papel',
+                'palabraclave'          => 'Toalla de papel'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.ofimaster.cl/quimicos-de-limpieza/jabones?page=1',
-                'categoria'             => 'Jabones'
+                'categoria'             => 'Jabones',
+                'palabraclave'          => 'Jabón'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.ofimaster.cl/dispensadores/de-aromas?page=1',
-                'categoria'             => 'Dispensador de Aromas'
+                'categoria'             => 'Dispensador de Aromas',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.ofimaster.cl/dispensadores/de-jabon?page=1',
-                'categoria'             => 'Dispensador de Jabon'
+                'categoria'             => 'Dispensador de Jabon',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.ofimaster.cl/dispensadores/de-papel-higiienico?page=1',
-                'categoria'             => 'Dispensador de Papel Higienico'
+                'categoria'             => 'Dispensador de Papel Higienico',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.ofimaster.cl/dispensadores/de-toalla-de-papel?page=1',
-                'categoria'             => 'Dispensador de Toalla'
+                'categoria'             => 'Dispensador de Toalla',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.ofimaster.cl/papel-tissue/servilletas?page=1',
-                'categoria'             => 'Servilletas'
+                'categoria'             => 'Servilletas',
+                'palabraclave'          => 'Servilleta'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.ofimaster.cl/search?q=sabanilla&page=1',
-                'categoria'             => 'Sabanillas'
+                'categoria'             => 'Sabanillas',
+                'palabraclave'          => 'Sabanilla'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.ofimaster.cl/search?q=pa%C3%B1o&page=1',
-                'categoria'             => 'Paños'
+                'categoria'             => 'Paños',
+                'palabraclave'          => 'Paños'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.ofimaster.cl/search?q=pa%C3%B1uelo%7D&page=1',
-                'categoria'             => 'Pañuelos'
+                'categoria'             => 'Pañuelos',
+                'palabraclave'          => 'Pañuelo'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.ofimaster.cl/search?q=alcohol&page=1',
-                'categoria'             => 'Alcohol'
+                'categoria'             => 'Alcohol',
+                'palabraclave'          => 'Alcohol'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.ofimaster.cl/search?q=lavaloza&page=1',
-                'categoria'             => 'Lavalozas'
+                'categoria'             => 'Lavalozas',
+                'palabraclave'          => 'Lavalozas'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.ofimaster.cl/search?q=limpiavidrio&page=1',
-                'categoria'             => 'Limpiavidrios'
+                'categoria'             => 'Limpiavidrios',
+                'palabraclave'          => 'Limpiavidrios'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.ofimaster.cl/search?q=desengrasante&page=1',
-                'categoria'             => 'Desengrasantes'
+                'categoria'             => 'Desengrasantes',
+                'palabraclave'          => 'Desengrasante'
             ],
 
         );
@@ -1150,6 +1376,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
             foreach ($categoriasLink as $categoriaLink) {
 
                 $paginaURLPages = $categoriaLink->linkCategoriaProducto;
+                $palabraclave = $categoriaLink->palabraclave;
                 $crawler = $client->request('GET', $paginaURLPages);
                 $numeroPaginas = $crawler->filter('.count > span')->last()->text('1');
 
@@ -1163,11 +1390,12 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $tituloCategoria = $categoriaLink->categoria;
                     $pagina = $i;
                     
-                    $crawler->filter("[class='product-block']")->each(function($node) use($tituloCategoria, $pagina, $pagId, $tpmid){
+                    $crawler->filter("[class='product-block']")->each(function($node) use($tituloCategoria, $pagina, $pagId, $tpmid, $descuentoProducto, $ofertaProducto, $palabraclave){
                         $imagenProducto = $node->filter("[class='img-fluid']")->attr('src');
                         $nombreProducto = $node->filter("[class='brand-name trsn']")->text();
                         $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                         $urlProducto = $node->filter(".product-block > a")->attr('href');
+                        $urlProductoConcatenado = "https://www.ofimaster.cl/$urlProducto";
                         $precioProducto = $node->filter("[class='block-price']")->text();
                         $precioString = explode("$",$precioProducto);
                         $precioString2 = explode("CLP",$precioString[1]);
@@ -1181,14 +1409,20 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->fecid           = $fecid;
                         $dtpdatospaginas->tpmid           = $tpmid;
                         $dtpdatospaginas->dtpnombre       = $nombreProducto;
-                        $dtpdatospaginas->dtpurl          = $urlProducto;
+                        $dtpdatospaginas->dtpurl          = $urlProductoConcatenado;
                         $dtpdatospaginas->dtpimagen       = $imagenProducto;
-                        $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                        $dtpdatospaginas->dtpprecioreal   = $precioStringFinal;
+                        $dtpdatospaginas->dtpprecioactual = $precioStringFinal;
+                        $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
+                        $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                         $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                         $dtpdatospaginas->dtppagina       = $pagina;
                         $dtpdatospaginas->dtpmarca        = $marcaProducto;
                         $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
-                        $dtpdatospaginas->save();   
+                        $dtpdatospaginas->dtppalabraclave = $palabraclave;
+                        if($dtpdatospaginas->save()){
+                            $this->obtenerProId($nombreProducto, null, $pagId, $dtpdatospaginas->id, $imagenProducto);
+                        }   
                     });
                 }
             }
@@ -1199,52 +1433,63 @@ class MetEtlObtenerDatosPaginasController extends Controller
     {
         $pagId = 10;        
         $tpmid = 1;
+        $descuentoProducto = 0;
+        $ofertaProducto = "¡Sin Oferta!";
         $categoriasLink = array(
             (object)
             [
                 'linkCategoriaProducto' => 'https://daos.cl/home/15-papel-higienico',
-                'categoria'             => 'Papel Higienico'
+                'categoria'             => 'Papel Higienico',
+                'palabraclave'          => 'Papel Higiénico'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://daos.cl/home/17-toalla-de-papel',
-                'categoria'             => 'Toalla de Papel'
+                'categoria'             => 'Toalla de Papel',
+                'palabraclave'          => 'Toalla de papel'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://daos.cl/home/21-lavalozas',
-                'categoria'             => 'Lavalozas'
+                'categoria'             => 'Lavalozas',
+                'palabraclave'          => 'Lavalozas'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://daos.cl/home/70-jabon-liquido',
-                'categoria'             => 'Jabon Liquido'
+                'categoria'             => 'Jabon Liquido',
+                'palabraclave'          => 'Jabón'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://daos.cl/home/71-jabon-en-barra',
-                'categoria'             => 'Jabon Barra'
+                'categoria'             => 'Jabon Barra',
+                'palabraclave'          => 'Jabón'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://daos.cl/home/22-antigrasa',
-                'categoria'             => 'Desengrasante'
+                'categoria'             => 'Desengrasante',
+                'palabraclave'          => 'Desengrasante'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://daos.cl/home/27-limpiadores',
-                'categoria'             => 'Limpiavidrios'
+                'categoria'             => 'Limpiavidrios',
+                'palabraclave'          => 'Limpiavidrios'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://daos.cl/home/101-alcohol-gel',
-                'categoria'             => 'Alcohol Gel'
+                'categoria'             => 'Alcohol Gel',
+                'palabraclave'          => 'Alcohol'
             ],
         );
         if($this->validarDataPorFecha(10, true)){
             foreach ($categoriasLink as $categoriaLink) {
 
                 $paginaURLPages = $categoriaLink->linkCategoriaProducto;
+                $palabraclave = $categoriaLink->palabraclave;
                 $crawler = $client->request('GET', $paginaURLPages);
                 $numeroPaginas = $crawler->filter(".page-list > li")->eq(4)->text('1');
                 
@@ -1255,28 +1500,37 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $tituloCategoria = $crawler->filter(".h2")->text();
                     $pagina = $i;
                     
-                    $crawler->filter("[class='thumbnail-container']")->each(function($node) use($tituloCategoria, $pagina, $pagId, $tpmid){
+                    $crawler->filter("[class='thumbnail-container']")->each(function($node) use($tituloCategoria, $pagina, $pagId, $tpmid,$descuentoProducto,$ofertaProducto,$palabraclave){
                         $imagenProducto = $node->filter("[class='ttproduct-img1']")->attr('src');
                         $nombreProducto = $node->filter("[class='h3 product-title']")->text();
                         $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                         $urlProducto = $node->filter("[class='thumbnail product-thumbnail']")->attr('href');
-                        $precioProducto = $node->filter("[class='price']")->text();
-                        $precioString = explode("$",$precioProducto);
-                        $precioStringFinal = trim($precioString[1]);
+                        $preciorealProducto = $node->filter("[class='price']")->text();
+                        $preciorealString = explode("$",$preciorealProducto);
+                        $preciorealStringFinal = trim($preciorealString[1]);
+
                         $fecid = $this->validarDataPorFecha(10);
 
-                        $dtpdatospaginas = new dtpdatospaginas();
-                        $dtpdatospaginas->pagid           = $pagId;
-                        $dtpdatospaginas->fecid           = $fecid;
-                        $dtpdatospaginas->tpmid           = $tpmid; 
-                        $dtpdatospaginas->dtpnombre       = $nombreProducto;
-                        $dtpdatospaginas->dtpurl          = $urlProducto;
-                        $dtpdatospaginas->dtpimagen       = $imagenProducto;
-                        $dtpdatospaginas->dtpprecio       = $precioStringFinal;
-                        $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
-                        $dtpdatospaginas->dtppagina       = $pagina;
-                        $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
-                        $dtpdatospaginas->save();
+                        if ($preciorealStringFinal > 0) {
+                            $dtpdatospaginas = new dtpdatospaginas();
+                            $dtpdatospaginas->pagid           = $pagId;
+                            $dtpdatospaginas->fecid           = $fecid;
+                            $dtpdatospaginas->tpmid           = $tpmid; 
+                            $dtpdatospaginas->dtpnombre       = $nombreProducto;
+                            $dtpdatospaginas->dtpurl          = $urlProducto;
+                            $dtpdatospaginas->dtpimagen       = $imagenProducto;
+                            $dtpdatospaginas->dtpprecioreal   = $preciorealStringFinal;
+                            $dtpdatospaginas->dtpprecioactual = $preciorealStringFinal;
+                            $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
+                            $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
+                            $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
+                            $dtpdatospaginas->dtppagina       = $pagina;
+                            $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
+                            $dtpdatospaginas->dtppalabraclave = $palabraclave;
+                            if($dtpdatospaginas->save()){
+                                $this->obtenerProId($nombreProducto, null, $pagId, $dtpdatospaginas->id, $imagenProducto);
+                            } 
+                        }
                     });
                 }
             }
@@ -1291,68 +1545,81 @@ class MetEtlObtenerDatosPaginasController extends Controller
             (object)
             [
                 'linkCategoriaProducto' => 'https://provit.cl/categorias/10/papel-higienico',
-                'categoria'             => 'Papel Higienico'
+                'categoria'             => 'Papel Higienico',
+                'palabraclave'          => 'Papel Higiénico'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://provit.cl/categorias/12/tollas-en-rollo',
-                'categoria'             => 'Toallas en Rollo'
+                'categoria'             => 'Toallas en Rollo',
+                'palabraclave'          => 'Toalla de papel'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://provit.cl/categorias/13/toallas-interfoliadas',
-                'categoria'             => 'Toallas Interfoliadas'
+                'categoria'             => 'Toallas Interfoliadas',
+                'palabraclave'          => 'Toalla de papel'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://provit.cl/categorias/14/sabanillas',
-                'categoria'             => 'Sabanillas'
+                'categoria'             => 'Sabanillas',
+                'palabraclave'          => 'Sabanilla'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://provit.cl/categorias/1/jabon',
-                'categoria'             => 'Jabones'
+                'categoria'             => 'Jabones',
+                'palabraclave'          => 'Jabón'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://provit.cl/lineas/1/dispensadores',
-                'categoria'             => 'Dispensadores'
+                'categoria'             => 'Dispensadores',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://provit.cl/categorias/11/servilletas',
-                'categoria'             => 'Servilletas'
+                'categoria'             => 'Servilletas',
+                'palabraclave'          => 'Servilleta'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://provit.cl/categorias/3/panos',
-                'categoria'             => 'Paños'
+                'categoria'             => 'Paños',
+                'palabraclave'          => 'Paños'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://provit.cl/busquedas/alcohol',
-                'categoria'             => 'Alcohol'
+                'categoria'             => 'Alcohol',
+                'palabraclave'          => 'Alcohol'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://provit.cl/busquedas/lavaloza',
-                'categoria'             => 'Lavalozas'
+                'categoria'             => 'Lavalozas',
+                'palabraclave'          => 'Lavalozas'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://provit.cl/busquedas/limpiavidrio',
-                'categoria'             => 'Limpiavidrios'
+                'categoria'             => 'Limpiavidrios',
+                'palabraclave'          => 'Limpiavidrios'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://provit.cl/busquedas/desengrasante',
-                'categoria'             => 'Desengrasantes'
+                'categoria'             => 'Desengrasantes',
+                'palabraclave'          => 'Desengrasante'
             ],
         );
         if($this->validarDataPorFecha(11, true)){
             foreach ($categoriasLink as $categoriaLink) {
 
                 $paginaURLPages = $categoriaLink->linkCategoriaProducto;
+                $palabraclave = $categoriaLink->palabraclave;
                 $crawler = $client->request('GET', $paginaURLPages);
                 $numeroPaginas = $crawler->filter(".paginate")->last()->text('1');
 
@@ -1362,36 +1629,64 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $tituloCategoria = $categoriaLink->categoria;
                     $pagina = $i;
                     
-                    $crawler->filter("[class='grilla']")->each(function($node) use($tituloCategoria, $pagina, $pagId, $tpmid){
+                    $crawler->filter("[class='grilla']")->each(function($node) use($tituloCategoria, $pagina, $pagId, $tpmid,$palabraclave){
                         $imagenProducto = $node->filter(".imgGrilla > img")->attr('src');
+                        $imagenProductoConcatenado = "https://provit.cl/$imagenProducto";
                         $nombreProducto = $node->filter("[class='nombreGrilla']")->text();
                         $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                         $urlProducto = $node->filter("[class='nombreGrilla']")->attr('href');
-                        $precioProducto = $node->filter("[class='conDescuento']")->text();
-                        $precioString = explode("$",$precioProducto);
-                        $precioStringFinal = trim($precioString[1]);
-                        $descuentoProducto = $node->filter("[class='etiquetaDctoCantidad']")->text('No');
-                        $descuentoPorcentajeProducto = $node->filter("[class='porcentajeDescuento']")->text('No');
-                        if (stristr($descuentoProducto,'Dcto.') || stristr($descuentoPorcentajeProducto,'%')) {
-                            $descuentoProducto = 'Si';  
-                        }
-                        $fecid = $this->validarDataPorFecha(11);
-                        $ofertaProducto = ($descuentoProducto == 'Si') ? '¡En Oferta!' : '¡Sin Oferta';
+                        $urlProductoConcatenado = "https://provit.cl/$urlProducto";
 
-                        $dtpdatospaginas = new dtpdatospaginas();
-                        $dtpdatospaginas->pagid           = $pagId;
-                        $dtpdatospaginas->fecid           = $fecid;
-                        $dtpdatospaginas->tpmid           = $tpmid;
-                        $dtpdatospaginas->dtpnombre       = $nombreProducto;
-                        $dtpdatospaginas->dtpurl          = $urlProducto;
-                        $dtpdatospaginas->dtpimagen       = $imagenProducto;
-                        $dtpdatospaginas->dtpprecio       = $precioStringFinal;
-                        $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
-                        $dtpdatospaginas->dtppagina       = $pagina;
-                        $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
-                        $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
-                        $dtpdatospaginas->dtpmecanica     = $ofertaProducto; 
-                        $dtpdatospaginas->save();
+                        $precioactualProducto = $node->filter("[class='conDescuento']")->text();
+                        $precioactualString = explode("$",$precioactualProducto);
+                        $precioactualStringFinal = trim($precioactualString[1]);
+
+                        $preciorealProducto = $node->filter(".valorGrilla > .antes")->text($precioactualStringFinal);
+                        // if ($nombreProducto == 'PAPEL HIGIENICO TORK SMARTONE MINI 12 ROLLOS DE 111 MTS') {
+                        //     dd(strlen(trim($preciorealProducto)),$preciorealProducto );
+                        // }
+                       if (strlen($preciorealProducto) > 8) {
+                            $preciorealString = explode("$",$preciorealProducto);
+                            $preciorealStringFinal = trim($preciorealString[1]);
+                            
+                       }else{
+                            $preciorealStringFinal = $precioactualStringFinal;
+                       }
+                        
+                        if ($precioactualStringFinal < $preciorealStringFinal) {
+                            $descuentoProducto = $preciorealStringFinal - $precioactualStringFinal;
+                        }else{
+                            $descuentoProducto = 0;
+                        }
+
+                        if ($descuentoProducto > 0) {
+                            $ofertaProducto = "¡Con Oferta!";
+                        }else{
+                            $ofertaProducto = "¡Sin Oferta!";
+                        }
+
+                        $fecid = $this->validarDataPorFecha(11);
+                        
+                        if ($preciorealStringFinal > 0) {
+                            $dtpdatospaginas = new dtpdatospaginas();
+                            $dtpdatospaginas->pagid           = $pagId;
+                            $dtpdatospaginas->fecid           = $fecid;
+                            $dtpdatospaginas->tpmid           = $tpmid;
+                            $dtpdatospaginas->dtpnombre       = $nombreProducto;
+                            $dtpdatospaginas->dtpurl          = $urlProductoConcatenado;
+                            $dtpdatospaginas->dtpimagen       = $imagenProductoConcatenado;
+                            $dtpdatospaginas->dtpprecioreal   = $preciorealStringFinal;
+                            $dtpdatospaginas->dtpprecioactual = $precioactualStringFinal;
+                            $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
+                            $dtpdatospaginas->dtppagina       = $pagina;
+                            $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
+                            $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
+                            $dtpdatospaginas->dtpmecanica     = $ofertaProducto; 
+                            $dtpdatospaginas->dtppalabraclave = $palabraclave;
+                            if($dtpdatospaginas->save()){
+                                $this->obtenerProId($nombreProducto, null, $pagId, $dtpdatospaginas->id, $imagenProductoConcatenado);
+                            } 
+                        }
                     });
                 }
             }
@@ -1402,46 +1697,56 @@ class MetEtlObtenerDatosPaginasController extends Controller
     {
         $pagId = 12;
         $tpmid = 1;
+        $descuentoProducto = 0;
+        $ofertaProducto = "¡Sin Oferta!";
         $categoriasLink = array(
             (object)
             [
                 'linkCategoriaProducto' => 'https://limpiamas.mercadoshops.cl/papel-higienico',
-                'categoria'             => 'Papel Higienico'
+                'categoria'             => 'Papel Higienico',
+                'palabraclave'          => 'Papel Higiénico'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://limpiamas.mercadoshops.cl/toalla',
-                'categoria'             => 'Toalla de Papel'
+                'categoria'             => 'Toalla de Papel',
+                'palabraclave'          => 'Toalla de papel'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://limpiamas.mercadoshops.cl/jabon',
-                'categoria'             => 'Jabon'
+                'categoria'             => 'Jabon',
+                'palabraclave'          => 'Jabón'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://limpiamas.mercadoshops.cl/dispensador',
-                'categoria'             => 'Dispensador'
+                'categoria'             => 'Dispensador',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://limpiamas.mercadoshops.cl/servilleta',
-                'categoria'             => 'Servilletas'
+                'categoria'             => 'Servilletas',
+                'palabraclave'          => 'Servilleta'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://limpiamas.mercadoshops.cl/sabanilla',
-                'categoria'             => 'Sabanillas'
+                'categoria'             => 'Sabanillas',
+                'palabraclave'          => 'Sabanilla'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://limpiamas.mercadoshops.cl/pañal',
-                'categoria'             => 'Pañales'
+                'categoria'             => 'Pañales',
+                'palabraclave'          => 'Pañal'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://limpiamas.mercadoshops.cl/alcohol',
-                'categoria'             => 'Alcohol'
+                'categoria'             => 'Alcohol',
+                'palabraclave'          => 'Alcohol'
             ],
 
         );
@@ -1449,11 +1754,12 @@ class MetEtlObtenerDatosPaginasController extends Controller
             foreach ($categoriasLink as $categoriaLink) {
 
                 $paginaURL = $categoriaLink->linkCategoriaProducto;
+                $palabraclave = $categoriaLink->palabraclave;
                 $crawler = $client->request('GET', $paginaURL);
                 $tituloCategoria = $crawler->filter(".ui-search-breadcrumb__title")->text();
                 
-                $crawler->filter("[class='ui-search-result__wrapper']")->each(function($node) use($tituloCategoria, $pagId, $tpmid){
-                    $imagenProducto = $node->filter(".slick-slide > img")->attr('src');
+                $crawler->filter("[class='ui-search-result__wrapper']")->each(function($node) use($tituloCategoria, $pagId, $tpmid, $descuentoProducto, $ofertaProducto,$palabraclave){
+                    $imagenProducto = $node->filter(".slick-slide > img")->attr('data-src');
                     $nombreProducto = $node->filter("[class='ui-search-item__title']")->text();
                     $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                     $urlProducto = $node->filter("[class='ui-search-item__group__element ui-search-link']")->attr('href');
@@ -1462,6 +1768,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $precioStringFinal = trim($precioString[1]);
                     $envioGratisProducto = $node->filter("[class='ui-search-item__shipping ui-search-item__shipping--free']")->text("Sin envío");
 
+                    $proid = $this->obtenerProId($nombreProducto, $precioStringFinal, $precioStringFinal, $imagenProducto);
                     $fecid = $this->validarDataPorFecha(12);
 
                     $dtpdatospaginas = new dtpdatospaginas();
@@ -1471,11 +1778,17 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
                     $dtpdatospaginas->dtpurl          = $urlProducto;
                     $dtpdatospaginas->dtpimagen       = $imagenProducto;
-                    $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                    $dtpdatospaginas->dtpprecioreal   = $precioStringFinal;
+                    $dtpdatospaginas->dtpprecioactual = $precioStringFinal;
+                    $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
+                    $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                     $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
                     $dtpdatospaginas->dtpenviogratis  = $envioGratisProducto;
-                    $dtpdatospaginas->save();  
+                    $dtpdatospaginas->dtppalabraclave = $palabraclave;
+                    if($dtpdatospaginas->save()){
+                        $this->obtenerProId($nombreProducto, null, $pagId, $dtpdatospaginas->id, $imagenProducto);
+                    }   
                 });
             }
         }
@@ -1485,139 +1798,181 @@ class MetEtlObtenerDatosPaginasController extends Controller
     {
         $pagId = 13;
         $tpmid = 1;
+        $descuentoProducto = "";
         $categoriasLink = array(
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/higenicos/',
-                'categoria'             => 'Papel Higienico'
+                'categoria'             => 'Papel Higienico',
+                'palabraclave'          => 'Papel Higiénico'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/toallas/dobladas/',
-                'categoria'             => 'Toalla Doblada'
+                'categoria'             => 'Toalla Doblada',
+                'palabraclave'          => 'Toalla de papel'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/toallas/toallas-rollo/',
-                'categoria'             => 'Toalla Rollo'
+                'categoria'             => 'Toalla Rollo',
+                'palabraclave'          => 'Toalla de papel'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/toallas/wipe/',
-                'categoria'             => 'Toalla Wipe'
+                'categoria'             => 'Toalla Wipe',
+                'palabraclave'          => 'Toalla de papel'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/jabones/',
-                'categoria'             => 'Jabon'
+                'categoria'             => 'Jabon',
+                'palabraclave'          => 'Jabón'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/otros-papeles/sabanillas-medicas/',
-                'categoria'             => 'Sabanillas Medicas'
+                'categoria'             => 'Sabanillas Medicas',
+                'palabraclave'          => 'Sabanilla'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/desengrasantes/',
-                'categoria'             => 'Desengrasantes'
+                'categoria'             => 'Desengrasantes',
+                'palabraclave'          => 'Desengrasante'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/accesorios-superficies/panos/',
-                'categoria'             => 'Paños'
+                'categoria'             => 'Paños',
+                'palabraclave'          => 'Paños de limpieza'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/otros-papeles/panuelos-faciales/',
-                'categoria'             => 'Pañuelos Faciales'
+                'categoria'             => 'Pañuelos Faciales',
+                'palabraclave'          => 'Pañuelo'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/servilletas-gourmet/',
-                'categoria'             => 'Servilleta Gourmet'
+                'categoria'             => 'Servilleta Gourmet',
+                'palabraclave'          => 'Servilleta'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/alimentaria/servilletas/servilletas-mesa/',
-                'categoria'             => 'Servilleta Mesa'
+                'categoria'             => 'Servilleta Mesa',
+                'palabraclave'          => 'Servilleta'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/alimentaria/servilletas/servilletas-interfoliadas/',
-                'categoria'             => 'Servilleta Interfoliada'
+                'categoria'             => 'Servilleta Interfoliada',
+                'palabraclave'          => 'Servilleta'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/alimentaria/servilletas/servilleta-coctel/',
-                'categoria'             => 'Servilleta Coctel'
+                'categoria'             => 'Servilleta Coctel',
+                'palabraclave'          => 'Servilleta'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/alimentaria/servilletas/servilletas-lunch/',
-                'categoria'             => 'Servilleta Lunch'
+                'categoria'             => 'Servilleta Lunch',
+                'palabraclave'          => 'Servilleta'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/alimentaria/servilletas/dispensadores-servilletas/',
-                'categoria'             => 'Dispensador de Servilletas'
+                'categoria'             => 'Dispensador de Servilletas',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/higenicos/dispensadores-higienicos/',
-                'categoria'             => 'Dispensador Higienico'
+                'categoria'             => 'Dispensador Higienico',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/jabones/dispensadores-jabones/',
-                'categoria'             => 'Dispensador Jabones'
+                'categoria'             => 'Dispensador Jabones',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/toallas/dispensadores-toallas/',
-                'categoria'             => 'Dispensador Toalla'
+                'categoria'             => 'Dispensador Toalla',
+                'palabraclave'          => 'Dispensador'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/incontinencia/incontinencia-hombres/',
                 'categoria'             => 'Incontinencia Hombres',
-                'producto'              => 'Pañal'
+                'producto'              => 'Pañal',
+                'palabraclave'          => 'Pañal'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/elementos-proteccion-personal/proteccion-piel/',
                 'categoria'             => 'Proteccion Piel',
-                'producto'              => 'Alcohol'
+                'producto'              => 'Alcohol',
+                'palabraclave'          => 'Alcohol'
             ],
             (object)
             [
                 'linkCategoriaProducto' => 'https://www.hygiene.cl/categoria-producto/alimentaria/lavalozas/',
-                'categoria'             => 'Lavalozas'
+                'categoria'             => 'Lavalozas',
+                'palabraclave'          => 'Lavalozas'
             ],
         );
         if($this->validarDataPorFecha(13, true)){
             foreach ($categoriasLink as $categoriaLink) {
 
                 $paginaURL = $categoriaLink->linkCategoriaProducto;
+                $palabraclave = $categoriaLink->palabraclave;
                 $crawler = $client->request('GET', $paginaURL);
                 $tituloCategoria = $categoriaLink->categoria;
 
-                $crawler->filter(".classic")->each(function($node) use($tituloCategoria, $pagId, $tpmid){
+                $crawler->filter(".classic")->each(function($node) use($tituloCategoria, $pagId, $tpmid, $descuentoProducto, $palabraclave){
                     $imagenProducto = $node->filter("[class='attachment-woocommerce_thumbnail size-woocommerce_thumbnail']")->attr('src');
                     $nombreProducto = $node->filter("[class='woocommerce-loop-product__title']")->text();
                     $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                     $urlProducto = $node->filter(".product-wrap > a")->attr('href');
-                    $precioProducto = $node->filter("[class='price']")->text();
-                  
-                    if ( strpos($precioProducto,"–")) {
-                        $precioString = explode("+",$precioProducto);
-                        $precioStringFinal = trim($precioString[0]);
-                    }else{
-                        $precioString = explode("$",$precioProducto);
-                        $precioString2 = explode("+",$precioString[1]);
-                        $precioStringFinal = trim($precioString2[0]);
+                    
+                    $precio = $node->filter("[class='price']")->text();
+                    //cuando el precio del producto tenga un rango
+                    if (strpos($precio,"–")) {
+                        $preciorealProducto = $node->filter("[class='price']")->text();
+                        $preciorealString = explode("+ IVA",$preciorealProducto);
+                        $preciorealStringFinal = str_replace(array("$"), '', $preciorealString[0]);
+                        $precioactualStringFinal = $preciorealStringFinal;
+                    }else{ //no tendra un rango y sera precio unico teniendo en cuenta que pueda estar en oferta
+                        $preciorealProducto = $node->filter("[class='woocommerce-Price-amount amount']")->first()->text();
+                        $precioactualProducto = $node->filter("[class='woocommerce-Price-amount amount']")->last()->text($preciorealProducto);
+                        $precioactualStringFinal = str_replace(array("$"), '', $precioactualProducto);
+
+                        if ( strpos($preciorealProducto,"–")) {
+                            $preciorealString = explode("+ IVA",$preciorealProducto);
+                            $preciorealStringFinal = str_replace(array("$"), '', $preciorealString[0]);
+                        }else{
+                            $precioString = explode("+ IVA",$preciorealProducto);
+                            $preciorealStringFinal = str_replace(array("$"), '', $precioString[0]);
+                        }
                     }
-                    $igvProducto = stristr($precioProducto,'IVA') ? true : false;
+                                        
+                    if ($preciorealStringFinal > $precioactualStringFinal) {
+                        $descuentoProducto = (float)$preciorealStringFinal - (float)$precioactualStringFinal;
+                    }else{
+                        $descuentoProducto = 0;
+                    }
+                    
+                    $igvProducto = stristr($preciorealProducto,'IVA') ? true : false;
                     $ofertaProducto = $node->filter("[class='onsale']")->text('Sin Oferta');
+
                     $fecid = $this->validarDataPorFecha(13);
 
                     $dtpdatospaginas = new dtpdatospaginas();
@@ -1627,12 +1982,17 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
                     $dtpdatospaginas->dtpurl          = $urlProducto;
                     $dtpdatospaginas->dtpimagen       = $imagenProducto;
-                    $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                    $dtpdatospaginas->dtpprecioactual = $precioactualStringFinal;
+                    $dtpdatospaginas->dtpprecioreal   = $preciorealStringFinal;
+                    $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                     $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
                     $dtpdatospaginas->dtpsigv         = $igvProducto;
                     $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
-                    $dtpdatospaginas->save(); 
+                    $dtpdatospaginas->dtppalabraclave = $palabraclave;
+                    if($dtpdatospaginas->save()){
+                        $this->obtenerProId($nombreProducto, null, $pagId, $dtpdatospaginas->id, $imagenProducto);
+                    } 
                 });
             }
         }
@@ -1642,7 +2002,6 @@ class MetEtlObtenerDatosPaginasController extends Controller
     {
         $pagId       = 14;
         $tpmid       = 1;
-        $precioFinal = "";
 
         $url = 'https://deadpool.instaleap.io/api/v2';
         $queryCategorias = array('operationName'=>'getStore','variables'=>['clientId'=>'CENTRAL_MAYORISTA'],'query'=>'query getStore($storeId: ID, $clientId: String) {  getStore(storeId: $storeId, clientId: $clientId) {    id    name    categories {      id      image      slug      name      redirectTo      isAvailableInHome      __typename    }    banners {      id      title      desktopImage      mobileImage      targetCategory      targetUrl {        url        type        __typename      }      __typename    }    __typename  }}');
@@ -1655,52 +2014,61 @@ class MetEtlObtenerDatosPaginasController extends Controller
         $categorias = array(
             (object)
             [ 
-                'id'        => '63489',
-                'categoria' => 'Jabones'
+                'id'           => '63489',
+                'categoria'    => 'Jabones',
+                'palabraclave' => 'Jabón'
             ],
             (object)
             [
-                'id'        => '63531',
-                'categoria' => 'Toallas de Papel'
+                'id'           => '63531',
+                'categoria'    => 'Toallas de Papel',
+                'palabraclave' => 'Toalla'
             ],
             (object)
             [
-                'id'        => '63530',
-                'categoria' => 'Servilletas'
+                'id'           => '63530',
+                'categoria'    => 'Servilletas',
+                'palabraclave' => 'Servilleta'
             ],
             (object)
             [
-                'id'        => '63529',
-                'categoria' => 'Papel Higiénico'
+                'id'           => '63529',
+                'categoria'    => 'Papel Higiénico',
+                'palabraclave' => 'Papel Higiénico'
             ],
             (object)
             [
-                'id'        => '63545',
-                'categoria' => 'Pañales Bebe'
+                'id'           => '63545',
+                'categoria'    => 'Pañales Bebe',
+                'palabraclave' => 'Pañal'
             ],
             (object)
             [
-                'id'        => '63494',
-                'categoria' => 'Cuidado Adulto Mayor',
-                'productos' => 'Pañales Adulto'
+                'id'           => '63494',
+                'categoria'    => 'Cuidado Adulto Mayor',
+                'productos'    => 'Pañales Adulto',
+                'palabraclave' => 'Pañal'
             ],
             (object)
             [
-                'id'        => '63534',
-                'categoria' => 'Limpiadores Hogar',
-                'productos' => 'Desengrasantes/Limpiavidrios/Lavalozas'
+                'id'           => '63534',
+                'categoria'    => 'Limpiadores Hogar',
+                'productos'    => 'Desengrasantes/Limpiavidrios/Lavalozas',
+                'palabraclave' => 'Lavalozas, Limpiavidrios, Desengrasante'
             ],
             (object)
             [
-                'id'        => '63533',
-                'categoria' => 'Accesorios Aseo',
-                'productos' => 'Wipes'
+                'id'           => '63533',
+                'categoria'    => 'Accesorios Aseo',
+                'productos'    => 'Wipes',
+                'palabraclave' => 'Wipes'
             ],
         );
         if($this->validarDataPorFecha(14, true)){
             foreach ($categorias as $categoria){
                 $id = $categoria->id;
                 $tituloCategoria = $categoria->categoria;
+                $palabraclave = $categoria->palabraclave;
 
                 $queryProductosObtenerPaginas = array('variables'=> ['categoryId'=> $id,'onlyThisCategory'=>false,'pagination'=>['pageSize'=>30,'currentPage'=>1],'storeId'=>$store],'query'=>'query ($pagination: paginationInput, $search: SearchInput, $storeId: ID!, $categoryId: ID, $onlyThisCategory: Boolean, $filter: ProductsFilterInput, $orderBy: productsSortInput) {  getProducts(pagination: $pagination, search: $search, storeId: $storeId, categoryId: $categoryId, onlyThisCategory: $onlyThisCategory, filter: $filter, orderBy: $orderBy) {    redirectTo    products {      id      description      name      photosUrls      sku      unit      price      specialPrice      promotion {        description        type        isActive        conditions        __typename      }      stock      nutritionalDetails      clickMultiplier      subQty      subUnit      maxQty      minQty      specialMaxQty      ean      boost      showSubUnit      isActive      slug      categories {        id        name        __typename      }      __typename    }    paginator {      pages      page      __typename    }    __typename  }}');
                 $queryProductosObtenerPaginasJson = json_encode($queryProductosObtenerPaginas);
@@ -1724,11 +2092,21 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     {
                         $fecid = $this->validarDataPorFecha(14);
                         $dtpunidadmedida = $this->obtenerUnidadMedida($producto->name);
-                        
-                        if ($producto->specialPrice < 0) {
-                            $precioFinal = $producto->specialPrice;
+                        if ($producto->specialPrice == 0) {
+                            $precioActual = $producto->price;
                         }else{
-                            $precioFinal = $producto->price;
+                            $precioActual = $producto->specialPrice;
+                        }
+                        if ($producto->price > $precioActual) {
+                            $descuentoProducto = $producto->price - $precioActual;
+                        }else{
+                            $descuentoProducto = 0;
+                        }
+                        
+                        if ($descuentoProducto > 0) {
+                            $ofertaProducto = "¡Con Oferta!";
+                        }else{
+                            $ofertaProducto = "¡Sin Oferta!";
                         }
                         $urlProducto = "https://www.centralmayorista.cl/p/$producto->slug";
 
@@ -1739,7 +2117,10 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->dtpnombre       = $producto->name;
                         $dtpdatospaginas->dtppagina       = $pagina;
                         $dtpdatospaginas->dtpimagen       = $producto->photosUrls[0];
-                        $dtpdatospaginas->dtpprecio       = $precioFinal;
+                        $dtpdatospaginas->dtpprecioreal   = $producto->price;
+                        $dtpdatospaginas->dtpprecioactual = $precioActual;
+                        $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
+                        $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                         $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                         $dtpdatospaginas->dtpsku          = $producto->sku;
                         $dtpdatospaginas->dtpstock        = $producto->stock;
@@ -1747,7 +2128,10 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
                         $dtpdatospaginas->dtpean          = $producto->ean[0]; 
                         $dtpdatospaginas->dtpurl          = $urlProducto;
-                        $dtpdatospaginas->save(); 
+                        $dtpdatospaginas->dtppalabraclave = $palabraclave;
+                        if($dtpdatospaginas->save()){
+                            $this->obtenerProId($producto->name, $producto->sku, $pagId, $dtpdatospaginas->id, $producto->photosUrls[0]);
+                        } 
                     }
                 }
             }
@@ -1767,45 +2151,52 @@ class MetEtlObtenerDatosPaginasController extends Controller
             $subcategorias = array(
                 (object)
                 [ 
-                    'slug'      => 'aseo-y-limpieza',
-                    'categoria' => 'Aseo y Limpieza',
-                    'producto'  => 'Papel Higienico / Dispensador / Alcohol Gel / Lavalozas / Limpiavidrio / Desengrasante / Dispensador Jabon'
+                    'slug'         => 'aseo-y-limpieza',
+                    'categoria'    => 'Aseo y Limpieza',
+                    'producto'     => 'Papel Higienico / Dispensador / Alcohol Gel / Lavalozas / Limpiavidrio / Desengrasante / Dispensador Jabon',
+                    'palabraclave' => 'Papel Higiénico, Dispensador, Alcohol Gel, Lavalozas, Limpiavidrios, Desengrasante'
+                ], 
+                (object)
+                [
+                    'slug'         => 'cuidado-de-la-piel',
+                    'categoria'    => 'Cuidado de la Piel',
+                    'producto'     => 'Jabon',
+                    'palabraclave' => 'Jabón'
                 ],
                 (object)
                 [
-                    'slug'      => 'cuidado-de-la-piel',
-                    'categoria' => 'Cuidado de la Piel',
-                    'producto'  => 'Jabon'
+                    'slug'         => 'otros-cocina',
+                    'categoria'    => 'Otros Cocina',
+                    'producto'     => 'Dispensador Toalla / Servilleta / Dispensador Agua Purificada',
+                    'palabraclave' => 'Servilleta, Dispensador'
                 ],
                 (object)
                 [
-                    'slug'      => 'otros-cocina',
-                    'categoria' => 'Otros Cocina',
-                    'producto'  => 'Dispensador Toalla / Servilleta / Dispensador Agua Purificada'
+                    'slug'         => 'utensilios',
+                    'categoria'    => 'Utensilios',
+                    'producto'     => 'Dispensador Agua',
+                    'palabraclave' => 'Dispensador'
                 ],
                 (object)
                 [
-                    'slug'      => 'utensilios',
-                    'categoria' => 'Utensilios',
-                    'producto'  => 'Dispensador Agua'
+                    'slug'         => 'higiene',
+                    'categoria'    => 'Higiene',
+                    'producto'     => 'Servilleta',
+                    'palabraclave' => 'Servilleta'
                 ],
                 (object)
                 [
-                    'slug'      => 'higiene',
-                    'categoria' => 'Higiene',
-                    'producto'  => 'Servilleta'
-                ],
-                (object)
-                [
-                    'slug'      => 'para-el-bano',
-                    'categoria' => 'Para el baño',
-                    'producto'  => 'Dispensador Automatico'
+                    'slug'         => 'para-el-bano',
+                    'categoria'    => 'Para el baño',
+                    'producto'     => 'Dispensador Automatico',
+                    'palabraclave' => 'Dispensador'
                 ],
 
             );
             if($this->validarDataPorFecha(15, true)){
                 foreach ($subcategorias as $subcategoria) {
                     $slug = $subcategoria->slug;
+                    $palabraclave = $subcategoria->palabraclave;
                     $categoria = $subcategoria->categoria;
                     $encontroPagina = true;
                     $numeroPaginas = 1;
@@ -1821,10 +2212,24 @@ class MetEtlObtenerDatosPaginasController extends Controller
                             foreach ($productosSubcategorias as $productosSubcategoria) {
 
                                 $fecid = $this->validarDataPorFecha(15);
-
-                                $precioString = explode("$",$productosSubcategoria->valor_oferta);
-                                $precioStringFinal = trim($precioString[1]);
+                           
+                                $preciorealStringFinal = str_replace(array("$"), '', $productosSubcategoria->valor_original);
+                                $precioactualStringFinal = str_replace(array("$"), '', $productosSubcategoria->valor_oferta);
+                                if ($preciorealStringFinal == null) {
+                                    $preciorealStringFinal = $precioactualStringFinal;
+                                }
+                                if ($precioactualStringFinal < $preciorealStringFinal) {
+                                    $descuentoProducto = (float)$preciorealStringFinal - (float)$precioactualStringFinal;
+                                }else{
+                                    $descuentoProducto = 0;
+                                }
+                                if ($descuentoProducto > 0) {
+                                    $ofertaProducto = "¡Con Oferta!";
+                                }else{
+                                    $ofertaProducto = "¡Sin Oferta!";
+                                }
                                 $dtpunidadmedida = $this->obtenerUnidadMedida($productosSubcategoria->titulo);
+                                $proid = $this->obtenerProId($productosSubcategoria->titulo, $precioactualStringFinal, $preciorealStringFinal, $productosSubcategoria->imagen);
 
                                 $dtpdatospaginas = new dtpdatospaginas();
                                 $dtpdatospaginas->pagid           = $pagId;
@@ -1833,13 +2238,19 @@ class MetEtlObtenerDatosPaginasController extends Controller
                                 $dtpdatospaginas->dtpnombre       = $productosSubcategoria->titulo;
                                 $dtpdatospaginas->dtppagina       = $numeroPaginas;
                                 $dtpdatospaginas->dtpimagen       = $productosSubcategoria->imagen;
-                                $dtpdatospaginas->dtpprecio       = $precioStringFinal;
+                                $dtpdatospaginas->dtpprecioactual = $precioactualStringFinal;
+                                $dtpdatospaginas->dtpprecioreal   = $preciorealStringFinal;
+                                $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
+                                $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                                 $dtpdatospaginas->dtpcategoria    = $categoria;
                                 $dtpdatospaginas->dtpurl          = $productosSubcategoria->url_desktop;
                                 $dtpdatospaginas->dtpstock        = $productosSubcategoria->estado_venta;
                                 $dtpdatospaginas->dtpmarca        = $productosSubcategoria->marcas;
                                 $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
-                                $dtpdatospaginas->save(); 
+                                $dtpdatospaginas->dtppalabraclave = $palabraclave;
+                                if($dtpdatospaginas->save()){
+                                    $this->obtenerProId($productosSubcategoria->titulo, null, $pagId, $dtpdatospaginas->id, $productosSubcategoria->imagen);
+                                } 
                             }
                             $numeroPaginas = $numeroPaginas + 1;
                         }else {

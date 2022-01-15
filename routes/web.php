@@ -33,7 +33,7 @@ $router->get('/scrapingHygiene', 'ScraperController@hygiene');
 $router->get('/scrapingMercado', 'ScraperController@mercado');
 $router->get('/scrapingCuponatic', 'ScraperController@cuponatic');
 
-$router->get('/test', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerDipisa');
+$router->get('/test', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerTork');
 
 $router->get('/exportar-competencias/{id}', 'Validaciones\ValExportarDatosController@ValExportarCompetencias');
 $router->get('/exportar-usuarios/{id}', 'Validaciones\ValExportarDatosController@ValExportarUsuarios');
@@ -47,6 +47,7 @@ $router->get('/obtener-producto-homologados/{proid}', 'Validaciones\Homologacion
 $router->post('/grafico-producto', 'Validaciones\Homologaciones\ValGraficoHomologacionesController@ValDatosProductoOriginalGrafico');
 $router->post('/grafico-agregar-homologado', 'Validaciones\Homologaciones\ValGraficoHomologacionesController@ValObtenerProductosCompetenciaGrafico');
 $router->get('/lista-comparador-competencia/{proid}', 'Validaciones\Homologaciones\ValProductosController@ValObtenerListaCompletaCompetencia');
+$router->post('/productos-filtro', 'Validaciones\Homologaciones\ValProductosController@ValListarProductosFiltros');
 
 $router->get('/obtener-permisos/{tpuid}','Validaciones\Administrativo\Permisos\ValPermisosController@ValObtenerListaPermisos');
 $router->get('/obtener-archivos-cargados/{empid}','Validaciones\Upload\ValArchivosController@ValObtenerListaArchivosCargados');

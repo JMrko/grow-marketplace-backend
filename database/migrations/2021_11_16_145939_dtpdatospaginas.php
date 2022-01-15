@@ -23,10 +23,13 @@ class Dtpdatospaginas extends Migration
             $table->unsignedInteger('tpmid');
             $table->unsignedInteger('tumid')->nullable();
             $table->string('dtpnombre', 250);
-            $table->string('dtpprecio', 60);
             $table->string('dtpurl', 350)->nullable(); 
             $table->string('dtpimagen', 250)->nullable();
             $table->string('dtppagina', 150)->nullable();
+            $table->string('dtpprecioreal', 60);
+            $table->string('dtpprecioactual', 60);
+            $table->string('dtpdescuento', 20)->nullable();//2
+            $table->string('dtpmecanica', 250)->nullable();
             $table->string('dtpdesclarga',500)->nullable();
             $table->boolean('dtpsigv')->default(false);
             $table->string('dtpcategoria', 150)->nullable();
@@ -34,7 +37,6 @@ class Dtpdatospaginas extends Migration
             $table->string('dtpskuhomologado', 100)->nullable();
             $table->string('dtpmarca', 150)->nullable();
             $table->string('dtpstock', 100)->nullable();
-            $table->string('dtpmecanica', 250)->nullable();
             $table->string('dtpunidadmedida', 250)->nullable();
             $table->boolean('dtpmercadolibre')->default(false);
             $table->string('dtpenviogratis', 25)->nullable();
@@ -60,9 +62,9 @@ class Dtpdatospaginas extends Migration
             $table->decimal('dtppromediodeventas', 15, 4)->nullable();//16
             $table->integer('dtppreciopromedio')->nullable();//5
             $table->string('dtpfulfillment', 5)->nullable();//2
-            $table->string('dtpdescuento', 20)->nullable();//2
             $table->string('dtptipopublicacion', 15)->nullable();//8
-            $table->string('dtpcondicion', 15)->nullable();//5
+            $table->string('dtpcondicion', 15)->nullable();//5dtppalabraclave
+            $table->string('dtppalabraclave', 100)->nullable();
             $table->timestamps();
 
             $table->foreign('pagid')->references('pagid')->on('pagpaginas');

@@ -19,7 +19,8 @@ class dtpdatospaginas extends Model
         'tpmid',
         'tumid',
         'dtpnombre',
-        'dtpprecio',
+        'dtpprecioreal',
+        'dtpprecioactual',
         'dtpurl',
         'dtpimagen',
         'dtppagina',
@@ -30,7 +31,7 @@ class dtpdatospaginas extends Model
         'dtpskuhomologado',
         'dtpmarca',
         'dtpstock',
-        // 'dtpmecanica',
+        'dtpmecanica',
         'dtpunidadmedida',
         'dtpmercadolibre',
         'dtpenviogratis',
@@ -59,6 +60,7 @@ class dtpdatospaginas extends Model
         'dtpdescuento',
         'dtptipopublicacion',
         'dtpcondicion',
+        'dtppalabraclave'
     ];
 
     public function proproductos()

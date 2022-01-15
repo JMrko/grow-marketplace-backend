@@ -51,7 +51,43 @@ class MetProductosController extends Controller
         $envio_gratis  = $request['envio_gratis'];
         $buscador      = $request['buscador'];
 
-        $pro = proproductos::whereIn('', );
+
+        // if ($sku) {
+            // $pro = proproductos::whereIn('prosku', $sku)
+            //                         ->get([
+            //                             ''
+            //                         ]);
+        // }else{
+            $pro = dtpdatospaginas::when($sku, function ($query) use ($sku) {
+                                            return $query->where('pagid', $sku);
+                                        })
+                                        ->when($marketplace, function ($query) use ($marketplace) {
+                                            return $query->where('dtpprecio', $marketplace);
+                                        })
+                                        ->when($marca, function ($query) use ($marca) {
+                                            return $query->where('dtpprecio', $marca);
+                                        })
+                                        ->when($categorias, function ($query) use ($categorias) {
+                                            return $query->where('dtpprecio', $categorias);
+                                        })
+                                        ->when($sku, function ($query) use ($sku) {
+                                            return $query->where('dtpprecio', $sku);
+                                        })
+                                        ->when($rango_precios, function ($query) use ($rango_precios) {
+                                            return $query->where('dtpprecio', $rango_precios);
+                                        })
+                                        ->when($descuento, function ($query) use ($descuento) {
+                                            return $query->where('dtpprecio', $descuento);
+                                        })
+                                        ->when($envio_gratis, function ($query) use ($envio_gratis) {
+                                            return $query->where('dtpprecio', $envio_gratis);
+                                        })
+                                        ->when($buscador, function ($query) use ($buscador) {
+                                            return $query->where('prpdate','LIKE','%'.$buscador.'%');
+                                        })
+                                        ->get();
+        // }
+        
 
         return response()->json([
             'respuesta' => $respuesta,
