@@ -71,6 +71,7 @@ $router->post('/importar-excel-cliente','Validaciones\CargaArchivos\ValCargaArch
 $router->post('/importar-excel-competencia','Validaciones\CargaArchivos\ValCargaArchivosController@ValImportarExcelCompetencia');
 $router->post('/importar-excel-maestra-productos','Validaciones\CargaArchivos\ValCargaArchivosController@ValCargaMaestraProductos');
 $router->post('/importar-excel-maestra-precios','Validaciones\CargaArchivos\ValCargaArchivosController@ValCargaMaestraPrecios');
+$router->get('/precios/{fecha}','Metodos\CargaArchivos\MetCargaArchivosMaestraPreciosController@obtenerFechaExcel');
 
 //Exportacion Archivos 
 $router->get('/generar-excel','Metodos\ExportacionArchivos\MetGenerarExcelController@MetExcelNorte');

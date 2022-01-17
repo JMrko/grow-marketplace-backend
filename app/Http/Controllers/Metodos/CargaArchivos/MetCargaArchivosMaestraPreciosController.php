@@ -19,6 +19,42 @@ use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 class MetCargaArchivosMaestraPreciosController extends Controller
 {   
+    public function obtenerFechaExcel($fecha)
+    {
+        $fechastring = explode("-", $fecha);
+        $dia = $fechastring[0];
+        $mes = $fechastring[1];
+        $anio = $fechastring[2];
+        $fecfechaDate = new DateTime($fecha);
+        $fechaComoEntero = strtotime($fecha);
+        $mesActualAbreviacion = date('M', $fechaComoEntero);
+        $mesActualTexto = date("F", $fechaComoEntero);
+        $diaActualTexto = date('l', $fechaComoEntero);
+
+        $fecfecha = fecfechas::where('fecdianumero', $dia)
+                            ->where('fecmesnumero', $mes)
+                            ->where('fecanionumero', $anio)
+                            ->first('fecid');
+        
+        $fecid = 0;
+        if ($fecfecha) {
+            $fecid = $fecfecha->fecid;
+        }else{
+            $nuevaFechaActual = new fecfechas();
+            $nuevaFechaActual->fecfecha = $fecfechaDate;
+            $nuevaFechaActual->fecmesabreviacion = $mesActualAbreviacion;
+            $nuevaFechaActual->fecdianumero = $dia;
+            $nuevaFechaActual->fecmesnumero = $mes;
+            $nuevaFechaActual->fecanionumero = $anio;
+            $nuevaFechaActual->fecmestexto = $mesActualTexto;
+            $nuevaFechaActual->fecdiatexto = $diaActualTexto;
+            if($nuevaFechaActual->save()){
+                $fecid = $nuevaFechaActual->fecid;
+            }
+        }
+        return $fecid;
+
+    }
     public function MetCargaMaestraPrecios(Request $request)
     {
         $respuesta = false;
@@ -72,23 +108,29 @@ class MetCargaArchivosMaestraPreciosController extends Controller
 
             if ($i==2) {
                 $mes = $fecha_datetime->format('m');
-                prppreciosproductos::where('prpdate','LIKE','%-'.$mes.'-%')
+                $dia = $fecha_datetime->format('d');
+                $anio = $fecha_datetime->format('Y');
+                $fecfechas = fecfechas::where('fecdianumero', $dia)
+                                        ->where('fecmesnumero', $mes)
+                                        ->where('fecanionumero', $anio)
+                                        ->first('fecid');
+                
+                if ($fecfechas) {
+                    prppreciosproductos::where('fecid', $fecfechas->fecid)//buscar con su date en la tabla fecfechas, obtener su fecid y prp eliminar
                                             ->delete();
+                }
+                // prppreciosproductos::where('prpdate','LIKE','%-'.$mes.'-%') 
+                //                             ->delete();
             }
             
             $proid = proproductos::where('prosku', $ex_codmaterial)->first('proid');
             if ($proid) {
                 $proid = $proid->proid;
-                proproductos::where('prosku', $ex_codmaterial)
-                                        ->update([
-                                            'proprecio' => $ex_exchangevalue1
-                                        ]);
             }else{
                 $proid = null;
             }
 
-            $ETL = new MetEtlObtenerDatosPaginasController;
-            $fecid = $ETL->validarDataPorFecha();
+            $fecid = $this->obtenerFechaExcel($fecha);
 
             $prpreciosproductos = new prppreciosproductos();
             $prpreciosproductos->proid                             = $proid;
@@ -105,6 +147,20 @@ class MetCargaArchivosMaestraPreciosController extends Controller
             if ($prpreciosproductos->save()) {
                 $respuesta = true;
                 $mensaje = 'Se almaceno la data correctamente';
+                
+                $prp = prppreciosproductos::join('fecfechas as fec', 'fec.fecid', 'prppreciosproductos.fecid')
+                                    ->where('proid', $proid)
+                                    ->orderBy('fecfecha', 'DESC')
+                                    ->first([
+                                        'proid',
+                                        'prpprecio'
+                                    ]);
+                if ($prp) {
+                    proproductos::where('proid', $prp->proid)
+                                    ->update([
+                                        'proprecio' => $prp->prpprecio
+                                    ]);
+                }
             }else{
                 $respuesta = false;
                 $mensaje = 'Surgio un error al guardar la data del excel';
