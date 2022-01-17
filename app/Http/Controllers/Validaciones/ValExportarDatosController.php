@@ -38,16 +38,31 @@ class ValExportarDatosController extends Controller
         }
     }
 
-    public function ValExportarProductosNoHomologados($id)
+    public function ValExportarProductosEmpresa($id)
     {
         $emp = empempresas::where('empid', $id)->first('empid');
         if ($emp) {
             $expPNH = new MetExportarDatosController;
-            return $expPNH->MetExportarProductosNoHomologados($id);
+            return $expPNH->MetExportarProductosEmpresa($id);
         }else{
             return response()->json([
                 'respuesta' => false,
                 'mensaje'   => 'Ingrese un ID de empresa válida'
+            ]);
+        }
+    }
+
+    public function ValExportarProductosNoHomologados($pagid)
+    {
+        $pag = pagpaginas::where('pagid', $pagid)->first('pagid');
+        
+        if ($pag) {
+            $expComp = new MetExportarDatosController;
+            return $expComp->MetExportarProductosNoHomologados($pagid);
+        }else{
+            return response()->json([
+                'respuesta' => false,
+                'mensaje'   => 'Ingrese un ID de página válida'
             ]);
         }
     }

@@ -40,15 +40,26 @@ class MetGraficoHomologacionesController extends Controller
                                             'fecfecha'
                                         ]);
         }else{
-            $fechas = dtpdatospaginas::join('fecfechas as fec', 'fec.fecid', 'dtpdatospaginas.fecid')
+
+            $fechas = prppreciosproductos::join('fecfechas as fec', 'fec.fecid', 'prppreciosproductos.fecid')
                                         ->where('proid', $proid)
                                         ->where('fec.fecfecha', '>=', Carbon::now()->subDays(30))
-                                        ->distinct('fec.fecid') 
+                                        ->distinct('fec.fecid')
                                         ->orderBy('fecfecha', 'ASC')
                                         ->get([
                                             'fec.fecid',
                                             'fecfecha'
                                         ]);
+
+            // $fechas = dtpdatospaginas::join('fecfechas as fec', 'fec.fecid', 'dtpdatospaginas.fecid')
+            //                             ->where('proid', $proid)
+            //                             ->where('fec.fecfecha', '>=', Carbon::now()->subDays(30))
+            //                             ->distinct('fec.fecid') 
+            //                             ->orderBy('fecfecha', 'ASC')
+            //                             ->get([
+            //                                 'fec.fecid',
+            //                                 'fecfecha'
+            //                             ]);
         }
 
         foreach($fechas as $fecha){
@@ -108,43 +119,15 @@ class MetGraficoHomologacionesController extends Controller
             "backgroundColor" => ""
         );
 
-        $fecha_inicio = $request['fecha_inicio'];
-        $fecha_final  = $request['fecha_final'];
-        $pagid        = $request['pagid'];
-        $proid        = $request['proid'];
-
-        if ($fecha_inicio &&  $fecha_final) {
-            $fechas = dtpdatospaginas::join('fecfechas as fec', 'fec.fecid', 'dtpdatospaginas.fecid')
-                                    ->where('proid', $proid)
-                                    ->where('pagid', $pagid)
-                                    ->whereBetween('fec.fecfecha', [$fecha_inicio, $fecha_final])
-                                    ->distinct('fec.fecid') 
-                                    ->orderBy('fecfecha', 'ASC')
-                                    ->get([
-                                        'fec.fecid',
-                                        'fecfecha'
-                                    ]);
-        }else{
-            $fechas = dtpdatospaginas::join('fecfechas as fec', 'fec.fecid', 'dtpdatospaginas.fecid')
-                                    ->where('proid', $proid)
-                                    ->where('pagid', $pagid)
-                                    ->where('fec.fecfecha', '>=', Carbon::now()->subDays(30))
-                                    ->distinct('fec.fecid') 
-                                    ->orderBy('fecfecha', 'ASC')
-                                    ->get([
-                                        'fec.fecid',
-                                        'fecfecha'
-                                    ]);
-        }
-
-        foreach($fechas as $fecha){
-            $labels_fechas[] = $fecha->fecfecha;
-        }
+        $fechas  = $request['fechas'];
+        $proid   = $request['proid'];
+        $pagid   = $request['pagid'];
 
         foreach ($fechas as $fecha) {
             
-            $prp = dtpdatospaginas::where('proid', $proid)
-                                    ->where('fecid', $fecha->fecid)
+            $prp = dtpdatospaginas::join('fecfechas as fec', 'fec.fecid', 'dtpdatospaginas.fecid')
+                                    ->where('proid', $proid)
+                                    ->where('fecfecha', $fecha)
                                     ->where('pagid', $pagid)
                                     ->first([
                                         'dtpprecio'
