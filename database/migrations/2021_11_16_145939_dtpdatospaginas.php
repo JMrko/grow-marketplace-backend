@@ -16,6 +16,7 @@ class Dtpdatospaginas extends Migration
         Schema::create('dtpdatospaginas', function (Blueprint $table) {
             $table->increments('dtpid');
             $table->unsignedInteger('pagid');
+            $table->unsignedInteger('pagidexcel')->nullable();
             $table->unsignedInteger('proid')->nullable();
             $table->unsignedInteger('fecid');
             $table->unsignedInteger('catid')->nullable();
@@ -68,6 +69,7 @@ class Dtpdatospaginas extends Migration
             $table->timestamps();
 
             $table->foreign('pagid')->references('pagid')->on('pagpaginas');
+            $table->foreign('pagidexcel')->references('pagid')->on('pagpaginas');
             $table->foreign('proid')->references('proid')->on('proproductos');
             $table->foreign('fecid')->references('fecid')->on('fecfechas');
             $table->foreign('catid')->references('catid')->on('catcategorias');

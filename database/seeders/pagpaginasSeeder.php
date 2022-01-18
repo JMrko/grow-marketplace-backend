@@ -67,7 +67,7 @@ class pagpaginasSeeder extends Seeder
 
         $pagina7 = new pagpaginas();
         $pagina7->tpmid              = 1;
-        $pagina7->pagnombre          = "Distribuidora Pronto";
+        $pagina7->pagnombre          = "Pronto";
         $pagina7->paglink            = "https://www.dpronto.cl/";
         $pagina7->pagbordercolor     = "rgb(138, 83, 122)";
         $pagina7->pagbackgroundcolor = "rgba(138, 83, 122, 0.5)";

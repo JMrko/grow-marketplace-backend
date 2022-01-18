@@ -12,6 +12,7 @@ class dtpdatospaginas extends Model
     protected $fillable = [
         'dtpid',
         'pagid',
+        'pagidexcel',
         'proid',
         'fecid',
         'catid',

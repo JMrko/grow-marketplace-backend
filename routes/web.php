@@ -33,7 +33,7 @@ $router->get('/scrapingHygiene', 'ScraperController@hygiene');
 $router->get('/scrapingMercado', 'ScraperController@mercado');
 $router->get('/scrapingCuponatic', 'ScraperController@cuponatic');
 
-$router->get('/test', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerTork');
+$router->get('/test', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerCuponatic');
 
 $router->get('/exportar-competencias/{id}', 'Validaciones\ValExportarDatosController@ValExportarCompetencias');
 $router->get('/exportar-usuarios/{id}', 'Validaciones\ValExportarDatosController@ValExportarUsuarios');
