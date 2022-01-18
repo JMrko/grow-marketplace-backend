@@ -37,13 +37,22 @@ $router->get('/test', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtene
 
 $router->get('/exportar-competencias/{id}', 'Validaciones\ValExportarDatosController@ValExportarCompetencias');
 $router->get('/exportar-usuarios/{id}', 'Validaciones\ValExportarDatosController@ValExportarUsuarios');
-$router->get('/exportar-productos/{id}', 'Validaciones\ValExportarDatosController@ValExportarProductosNoHomologados');
+$router->get('/exportar-productos/{id}', 'Validaciones\ValExportarDatosController@ValExportarProductosEmpresa');
+$router->get('/exportar-productos-no-homologados/{pagid}', 'Validaciones\ValExportarDatosController@ValExportarProductosNoHomologados');
+
+$router->post('/obtener-marketplaces', 'Validaciones\MarketPlaces\ValObtenerMarketPlacesController@ValObtenerMarketPlaces');
+$router->post('/obtener-marcas', 'Validaciones\Marcas\ValObtenerMarcasController@ValObtenerMarcas');
+$router->post('/obtener-productos-homologados', 'Metodos\Competencia\ObtenerProductosController@ObtenerProductos');
 
 //Homologaciones
-$router->get('/obtener-compentencias/{pagid}', 'Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValObtenerListaCompetencias');
-$router->get('/obtener-productos/{empid}','Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValObtenerListaProducto');
-$router->patch('/asignar-sku/{dtpid}/{proid}','Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValAsignacionProductoCompetencia');
-$router->get('/obtener-producto-homologados/{proid}', 'Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValObtenerProductoConHomologaciones');
+$router->post('/obtener-compentencias', 'Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValObtenerListaCompetencias');
+$router->post('/obtener-productos','Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValObtenerListaProducto');
+$router->post('/asignar-sku','Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValAsignacionProductoCompetencia');
+$router->post('/obtener-competencias','Metodos\Homologaciones\MetAsignarProductoDeCompetenciaController@MetObtenerCompetencias');
+
+
+$router->post('/obtener-producto-seleccionado', 'Validaciones\Homologaciones\ValAsignarProductoDeCompetenciaController@ValObtenerProductoConHomologaciones');
+
 $router->post('/grafico-producto', 'Validaciones\Homologaciones\ValGraficoHomologacionesController@ValDatosProductoOriginalGrafico');
 $router->post('/grafico-agregar-homologado', 'Validaciones\Homologaciones\ValGraficoHomologacionesController@ValObtenerProductosCompetenciaGrafico');
 $router->get('/lista-comparador-competencia/{proid}', 'Validaciones\Homologaciones\ValProductosController@ValObtenerListaCompletaCompetencia');

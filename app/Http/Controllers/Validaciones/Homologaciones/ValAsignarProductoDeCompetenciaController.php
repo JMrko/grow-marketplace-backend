@@ -13,42 +13,58 @@ use Illuminate\Http\Request;
 
 class ValAsignarProductoDeCompetenciaController extends Controller
 {
-    public function ValObtenerListaCompetencias($pagid)
+    public function ValObtenerListaCompetencias(Request $request)
     {
-        $pag = pagpaginas::where('pagid', $pagid)->first('pagid');
 
-        if ($pag) {
-            $comp = new MetAsignarProductoDeCompetenciaController;
-            return $comp->MetObtenerListaCompetencias($pagid);
-        }else{
-            return response()->json([
-                'respuesta' => false,
-                'mensaje'   => 'Ingrese un ID de Marketplace válido'
-            ]);
-        }
+        $comp = new MetAsignarProductoDeCompetenciaController;
+        return $comp->MetObtenerListaCompetencias($request);
+
+        // if($pagid == 0){
+        //     $comp = new MetAsignarProductoDeCompetenciaController;
+        //     return $comp->MetObtenerListaCompetencias($request);
+        // }else{
+        //     $pag = pagpaginas::where('pagid', $pagid)->first('pagid');
+
+        //     if ($pag) {
+        //         $comp = new MetAsignarProductoDeCompetenciaController;
+        //         return $comp->MetObtenerListaCompetencias($request);
+        //     }else{
+        //         return response()->json([
+        //             'respuesta' => false,
+        //             'mensaje'   => 'Ingrese un ID de Marketplace válido'
+        //         ]);
+        //     }
+        // }
     }
 
-    public function ValObtenerListaProducto($empid)
+    public function ValObtenerListaProducto(Request $request)
     {
-        $emp = empempresas::where('empid', $empid)->first('empid');
 
-        if ($emp) {
-            $pro = new MetAsignarProductoDeCompetenciaController;
-            return $pro->MetObtenerListaProducto($empid);
-        }else{
-            return response()->json([
-                'respuesta' => false,
-                'mensaje'   => 'Ingrese un ID de empresa válida'
-            ]);
-        }
+        $pro = new MetAsignarProductoDeCompetenciaController;
+        return $pro->MetObtenerListaProducto($request);
+
+        // $emp = empempresas::where('empid', $empid)->first('empid');
+
+        // if ($emp) {
+        //     $pro = new MetAsignarProductoDeCompetenciaController;
+        //     return $pro->MetObtenerListaProducto($empid);
+        // }else{
+        //     return response()->json([
+        //         'respuesta' => false,
+        //         'mensaje'   => 'Ingrese un ID de empresa válida'
+        //     ]);
+        // }
     }
 
-    public function ValAsignacionProductoCompetencia(Request $request, $dtpid, $proid)
+    public function ValAsignacionProductoCompetencia(Request $request)
     {
         $respuesta = false;
         $mensaje = '';
 
-        $token = $request->header('token');
+        $token = $request->header('api_token');
+        $dtpid = $request['dtpid'];
+        $proid = $request['proid'];
+
         $usu = usuusuarios::where('usutoken', $token)->first('usutoken');
 
         $dtp = dtpdatospaginas::where('dtpid', $dtpid)->first('dtpid');
@@ -79,32 +95,32 @@ class ValAsignarProductoDeCompetenciaController extends Controller
         ]);
     }
 
-    public function ValObtenerProductoConHomologaciones(Request $request, $proid)
+    public function ValObtenerProductoConHomologaciones(Request $request)
     {
         $respuesta = false;
         $mensaje = '';
 
         $token = $request->header('token');
-        $usu = usuusuarios::where('usutoken', $token)->first('usutoken');
+        // $usu = usuusuarios::where('usutoken', $token)->first('usutoken');
 
-        $pro = proproductos::where('proid', $proid)->first('proid');
+        // $pro = proproductos::where('proid', $proid)->first('proid');
 
-        if ($usu) {
-            if ($pro) {
+        // if ($usu) {
+        //     if ($pro) {
                 $proHomologado = new MetAsignarProductoDeCompetenciaController;
-                return $proHomologado->MetObtenerProductoConHomologaciones($proid);
-            }else{
-                $respuesta = false;
-                $mensaje = 'Ingrese un ID de producto válido';
-            }
-        }else{
-            $respuesta = false;
-            $mensaje = 'Ingrese un token valido';
-        }
+                return $proHomologado->MetObtenerProductoConHomologaciones($request);
+            // }else{
+            //     $respuesta = false;
+            //     $mensaje = 'Ingrese un ID de producto válido';
+            // }
+        // }else{
+        //     $respuesta = false;
+        //     $mensaje = 'Ingrese un token valido';
+        // }
         
-        return response()->json([
-            'respuesta' => $respuesta,
-            'mensaje'   => $mensaje
-        ]);
+        // return response()->json([
+        //     'respuesta' => $respuesta,
+        //     'mensaje'   => $mensaje
+        // ]);
     }
 }
