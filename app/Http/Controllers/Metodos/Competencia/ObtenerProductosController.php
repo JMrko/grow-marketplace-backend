@@ -12,6 +12,7 @@ class ObtenerProductosController extends Controller
     {
 
         $dtps = dtpdatospaginas::join('proproductos as pro', 'pro.proid', 'dtpdatospaginas.proid')
+                            // ->where('dtpnombre', 'like', '%elite%')
                                 ->select(
                                     'dtpid',
                                     'dtpprecio',

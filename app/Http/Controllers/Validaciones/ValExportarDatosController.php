@@ -54,16 +54,16 @@ class ValExportarDatosController extends Controller
 
     public function ValExportarProductosNoHomologados($pagid)
     {
-        $pag = pagpaginas::where('pagid', $pagid)->first('pagid');
+        // $pag = pagpaginas::where('pagid', $pagid)->first('pagid');
         
-        if ($pag) {
+        // if ($pag) {
             $expComp = new MetExportarDatosController;
             return $expComp->MetExportarProductosNoHomologados($pagid);
-        }else{
-            return response()->json([
-                'respuesta' => false,
-                'mensaje'   => 'Ingrese un ID de página válida'
-            ]);
-        }
+        // }else{
+        //     return response()->json([
+        //         'respuesta' => false,
+        //         'mensaje'   => 'Ingrese un ID de página válida'
+        //     ]);
+        // }
     }
 }

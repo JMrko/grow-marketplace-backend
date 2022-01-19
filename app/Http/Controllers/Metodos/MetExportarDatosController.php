@@ -1419,7 +1419,13 @@ class MetExportarDatosController extends Controller
 
         $dtps = dtpdatospaginas::join('pagpaginas as pag', 'pag.pagid', 'dtpdatospaginas.pagid')
                                 ->where('proid', null)
-                                // ->where('pagid', $pagid)
+                                ->where(function ($query) use($pagid) {
+                                    if($pagid == 0){
+
+                                    }else{
+                                        $query->where('pag.pagid', $pagid);
+                                    }
+                                })
                                 // ->limit(10)
                                 ->get([
                                     'dtpid',
@@ -1430,7 +1436,7 @@ class MetExportarDatosController extends Controller
                                     'dtpsku',
                                     'dtpdesclarga',
                                     'dtpnombre',
-                                    'dtpprecio',
+                                    'dtpprecioactual as dtpprecio',
                                     'dtpsigv',
                                     'dtpstock',
                                     'dtpimagen',
@@ -1438,7 +1444,11 @@ class MetExportarDatosController extends Controller
 
                                     'dtpmecanica',
                                     'dtpunidadmedida',
-                                    'dtpenviogratis'
+                                    'dtpenviogratis',
+
+                                    'dtppalabraclave',
+                                    'dtpprecioreal',
+                                    'dtpdescuento'
                                 ]);
 
         $meses = array("Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre");
@@ -1600,6 +1610,25 @@ class MetExportarDatosController extends Controller
                         )
                     ),
                     array(
+                        "value" => "PALABRA CLAVE",
+                        "style" => array(
+                            "font" => array(
+                                "sz" => "9",
+                                "bold" => true,
+                                "color" => array(
+                                    "rgb" => "FFFFFFFF"
+                                )
+                            ),
+                            "fill" => array(
+                                "patternType" => 'solid',
+                                "fgColor" => array(
+                                    "rgb" => "FF004FB8"
+                                )
+                            )
+                            
+                        )
+                    ),
+                    array(
                         "value" => "CATEOGORÍA",
                         "style" => array(
                             "font" => array(
@@ -1695,7 +1724,7 @@ class MetExportarDatosController extends Controller
                         )
                     ),
                     array(
-                        "value" => "PRECIO",
+                        "value" => "PRECIO REAL",
                         "style" => array(
                             "font" => array(
                                 "sz" => "9",
@@ -1713,6 +1742,47 @@ class MetExportarDatosController extends Controller
                             
                         )
                     ),
+
+                    array(
+                        "value" => "PRECIO ACTUAL",
+                        "style" => array(
+                            "font" => array(
+                                "sz" => "9",
+                                "bold" => true,
+                                "color" => array(
+                                    "rgb" => "FFFFFFFF"
+                                )
+                            ),
+                            "fill" => array(
+                                "patternType" => 'solid',
+                                "fgColor" => array(
+                                    "rgb" => "FF004FB8"
+                                )
+                            )
+                            
+                        )
+                    ),
+
+                    array(
+                        "value" => "DESCUENTO",
+                        "style" => array(
+                            "font" => array(
+                                "sz" => "9",
+                                "bold" => true,
+                                "color" => array(
+                                    "rgb" => "FFFFFFFF"
+                                )
+                            ),
+                            "fill" => array(
+                                "patternType" => 'solid',
+                                "fgColor" => array(
+                                    "rgb" => "FF004FB8"
+                                )
+                            )
+                            
+                        )
+                    ),
+
                     array(
                         "value" => "IVA",
                         "style" => array(
@@ -1773,25 +1843,25 @@ class MetExportarDatosController extends Controller
                         )
                     ),
 
-                    array(
-                        "value" => "UNIDAD DE MEDIDA",
-                        "style" => array(
-                            "font" => array(
-                                "sz" => "9",
-                                "bold" => true,
-                                "color" => array(
-                                    "rgb" => "FFFFFFFF"
-                                )
-                            ),
-                            "fill" => array(
-                                "patternType" => 'solid',
-                                "fgColor" => array(
-                                    "rgb" => "FF004FB8"
-                                )
-                            )
+                    // array(
+                    //     "value" => "UNIDAD DE MEDIDA",
+                    //     "style" => array(
+                    //         "font" => array(
+                    //             "sz" => "9",
+                    //             "bold" => true,
+                    //             "color" => array(
+                    //                 "rgb" => "FFFFFFFF"
+                    //             )
+                    //         ),
+                    //         "fill" => array(
+                    //             "patternType" => 'solid',
+                    //             "fgColor" => array(
+                    //                 "rgb" => "FF004FB8"
+                    //             )
+                    //         )
                             
-                        )
-                    ),
+                    //     )
+                    // ),
 
                     array(
                         "value" => "ENVIO GRATIS",
@@ -1950,6 +2020,21 @@ class MetExportarDatosController extends Controller
                     )
                 ),
                 array(
+                    "value" => $dtp->dtppalabraclave,
+                    "style" => array(
+                        "font" => array(
+                            "sz" => "9",
+                            "bold" => true,
+                        ),
+                        "fill" => array(
+                            "patternType" => 'solid',
+                            "fgColor" => array(
+                                "rgb" => "FFF2F2F2"
+                            )
+                        )
+                    )
+                ),
+                array(
                     "value" => $dtp->dtpcategoria,
                     "style" => array(
                         "font" => array(
@@ -2025,7 +2110,37 @@ class MetExportarDatosController extends Controller
                     )
                 ),
                 array(
+                    "value" => $dtp->dtpprecioreal,
+                    "style" => array(
+                        "font" => array(
+                            "sz" => "9",
+                            "bold" => true,
+                        ),
+                        "fill" => array(
+                            "patternType" => 'solid',
+                            "fgColor" => array(
+                                "rgb" => "FFF2F2F2"
+                            )
+                        )
+                    )
+                ),
+                array(
                     "value" => $dtp->dtpprecio,
+                    "style" => array(
+                        "font" => array(
+                            "sz" => "9",
+                            "bold" => true,
+                        ),
+                        "fill" => array(
+                            "patternType" => 'solid',
+                            "fgColor" => array(
+                                "rgb" => "FFF2F2F2"
+                            )
+                        )
+                    )
+                ),
+                array(
+                    "value" => $dtp->dtpdescuento == 1 ? "INCLUYE" : "NO INCLUYE",
                     "style" => array(
                         "font" => array(
                             "sz" => "9",
@@ -2098,21 +2213,21 @@ class MetExportarDatosController extends Controller
                     )
                 ),
 
-                array(
-                    "value" => $dtp->dtpunidadmedida,
-                    "style" => array(
-                        "font" => array(
-                            "sz" => "9",
-                            "bold" => true,
-                        ),
-                        "fill" => array(
-                            "patternType" => 'solid',
-                            "fgColor" => array(
-                                "rgb" => "FFF2F2F2"
-                            )
-                        )
-                    )
-                ),
+                // array(
+                //     "value" => $dtp->dtpunidadmedida,
+                //     "style" => array(
+                //         "font" => array(
+                //             "sz" => "9",
+                //             "bold" => true,
+                //         ),
+                //         "fill" => array(
+                //             "patternType" => 'solid',
+                //             "fgColor" => array(
+                //                 "rgb" => "FFF2F2F2"
+                //             )
+                //         )
+                //     )
+                // ),
 
                 array(
                     "value" => $dtp->dtpenviogratis,
