@@ -17,19 +17,20 @@ class MetCargaArchivosMLClienteController extends Controller
 {
     public function MetCargaArchivosCliente(Request $request)
     {
-        $pagId = 17;
-        $respuesta = false;
-        $mensaje = '';
+        $pagId           = 16;
+        $pagidexcel      = 17;
+        $respuesta       = false;
+        $mensaje         = '';
         $dtpmercadolibre = false;
-        $tpmid = 1;
-        $tipo_fichero = 'Productos de Mercado Libre Cliente';
-        $tcaid = 1;
-        $carexito = true;
-        $tpaid = 1;
-        $audlog = '';
-        $audtabla = 'carcargasarchivos';
-        $audpk = '';
-        $urlproducto = 'https://www.softys.com/es/';
+        $tpmid           = 1;
+        $tipo_fichero    = 'Productos de Mercado Libre Cliente';
+        $tcaid           = 1;
+        $carexito        = true;
+        $tpaid           = 1;
+        $audlog          = '';
+        $audtabla        = 'carcargasarchivos';
+        $audpk           = '';
+        $urlproducto     = 'https://www.softys.com/es/';
 
         $token  = $request->header('token');
         $fichero_subido = $request->file('archivo');
@@ -61,6 +62,7 @@ class MetCargaArchivosMLClienteController extends Controller
                 $dtpunidadmedida = $ETLController->obtenerUnidadMedida($ex_dtpnombre);
                 $ex_dtpidproducto = $objPHPExcel->getActiveSheet()->getCell('B'.$i)->getCalculatedValue();
                 $ex_dtpprecio = $objPHPExcel->getActiveSheet()->getCell('C'.$i)->getCalculatedValue();
+                $precioPlano = $ETLController->obtenerPrecioPlano($ex_dtpprecio);
                 $ex_dtpenviogratis = $objPHPExcel->getActiveSheet()->getCell('D'.$i)->getCalculatedValue();
                 $ex_dtpmercadoenvio = $objPHPExcel->getActiveSheet()->getCell('E'.$i)->getCalculatedValue();
                 $ex_dtpestado = $objPHPExcel->getActiveSheet()->getCell('F'.$i)->getCalculatedValue();
@@ -82,15 +84,20 @@ class MetCargaArchivosMLClienteController extends Controller
                 $ex_dtpconversionxperiodo = $objPHPExcel->getActiveSheet()->getCell('X'.$i)->getCalculatedValue();
                 $ex_dtpsku = $objPHPExcel->getActiveSheet()->getCell('S'.$i)->getCalculatedValue();
                 $ex_dtpstock = $objPHPExcel->getActiveSheet()->getCell('G'.$i)->getCalculatedValue();
-                
+                $decuentoproducto = 0;
+                $ofertaproducto = "¡Sin Oferta!";
                 $fecid = $ETLController->validarDataPorFecha(17);
 
                 $dtpdatospaginas = new dtpdatospaginas();
                 $dtpdatospaginas->fecid                            = $fecid;
                 $dtpdatospaginas->pagid                            = $pagId;
+                $dtpdatospaginas->pagidexcel                       = $pagidexcel;
                 $dtpdatospaginas->tpmid                            = $tpmid;
                 $dtpdatospaginas->dtpnombre                        = $ex_dtpnombre;
-                $dtpdatospaginas->dtpprecio                        = $ex_dtpprecio;
+                $dtpdatospaginas->dtpprecioreal                    = $precioPlano;
+                $dtpdatospaginas->dtpprecioactual                  = $precioPlano;
+                $dtpdatospaginas->dtpdescuento                     = $decuentoproducto;
+                $dtpdatospaginas->dtpmecanica                      = $ofertaproducto;
                 $dtpdatospaginas->dtpsku                           = $ex_dtpsku;
                 $dtpdatospaginas->dtpstock                         = $ex_dtpstock;
                 $dtpdatospaginas->dtpunidadmedida                  = $dtpunidadmedida;

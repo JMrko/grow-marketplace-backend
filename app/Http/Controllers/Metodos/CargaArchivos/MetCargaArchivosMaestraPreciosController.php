@@ -57,17 +57,15 @@ class MetCargaArchivosMaestraPreciosController extends Controller
     }
     public function MetCargaMaestraPrecios(Request $request)
     {
-        $respuesta = false;
-        $mensaje = '';
-        $tpmid = 1;
-        $empid = 1;
+        $respuesta    = false;
+        $mensaje      = '';
         $tipo_fichero = 'Maestra Precios';
-        $tcaid = 1;
-        $carexito = true;
-        $tpaid = 1;
-        $audlog = '';
-        $audtabla = 'prppreciosproductos';
-        $audpk = '';
+        $tcaid        = 1;
+        $carexito     = true;
+        $tpaid        = 1;
+        $audlog       = '';
+        $audtabla     = 'prppreciosproductos';
+        $audpk        = '';
 
         $token  = $request->header('token');
         $fichero_subido = $request->file('archivo');
@@ -93,7 +91,7 @@ class MetCargaArchivosMaestraPreciosController extends Controller
         $objPHPExcel    = IOFactory::load($fichero_subido);
         $objPHPExcel->setActiveSheetIndex(0);
         $numRows = $objPHPExcel->setActiveSheetIndex(0)->getHighestRow();
-      
+
         for ($i=2; $i <= $numRows ; $i++) {
             $ex_date = $objPHPExcel->getActiveSheet()->getCell('A'.$i)->getCalculatedValue();
             $fecha_datetime = Date::excelToDateTimeObject($ex_date);
@@ -119,8 +117,7 @@ class MetCargaArchivosMaestraPreciosController extends Controller
                     prppreciosproductos::where('fecid', $fecfechas->fecid)//buscar con su date en la tabla fecfechas, obtener su fecid y prp eliminar
                                             ->delete();
                 }
-                // prppreciosproductos::where('prpdate','LIKE','%-'.$mes.'-%') 
-                //                             ->delete();
+
             }
             
             $proid = proproductos::where('prosku', $ex_codmaterial)->first('proid');

@@ -18,17 +18,19 @@ class MetCargaArchivosMLCompetenciaController extends Controller
 {
     public function MetCargaArchivosCompetencia(Request $request)
     {
-        $respuesta = false;
-        $mensaje = '';
+        $respuesta       = false;
+        $mensaje         = '';
         $dtpmercadolibre = true;
-        $tpmid = 1;
-        $tipo_fichero = 'Productos de Mercado Libre Competencia';
-        $tcaid = 1;
-        $carexito = true;
-        $tpaid = 1;
-        $audlog = '';
-        $audtabla = 'carcargasarchivos';
-        $audpk = '';
+        $tpmid           = 1;
+        $tipo_fichero    = 'Productos de Mercado Libre Competencia';
+        $tcaid           = 1;
+        $carexito        = true;
+        $tpaid           = 1;
+        $audlog          = '';
+        $audtabla        = 'carcargasarchivos';
+        $audpk           = '';
+        $pagId           = 16;
+        $pagidexcel      = '';
 
         $token  = $request->header('token');
         $fichero_subido = $request->file('archivo');
@@ -51,14 +53,17 @@ class MetCargaArchivosMLCompetenciaController extends Controller
             'url_archivo' => $url_fichero
         ];
 
-        $nombres_paginas = pagpaginas::get(['pagnombre', 'pagid']);
+        $nombres_paginas = pagpaginas::get([
+                                        'pagnombre', 
+                                        'pagid'
+                                        ]);
         
         foreach ($nombres_paginas as $pagina) {
             if(stristr($nombre_fichero,$pagina->pagnombre)){
-                $pagId = $pagina->pagid;
+                $pagidexcel = $pagina->pagid;
                 break;
             }else{
-                $pagId = 18;
+                $pagidexcel = 18;
             }
         }
 
@@ -76,6 +81,7 @@ class MetCargaArchivosMLCompetenciaController extends Controller
                 $ex_dtpventaenunid = $objPHPExcel->getActiveSheet()->getCell('E'.$i)->getCalculatedValue();
                 $ex_dtppromediodeventas = $objPHPExcel->getActiveSheet()->getCell('F'.$i)->getCalculatedValue();
                 $ex_dtpprecio = $objPHPExcel->getActiveSheet()->getCell('G'.$i)->getCalculatedValue();
+                $precioPlano = $ETLController->obtenerPrecioPlano($ex_dtpprecio);
                 $ex_dtppreciopromedio = $objPHPExcel->getActiveSheet()->getCell('H'.$i)->getCalculatedValue();
                 $ex_dtpfulfillment = $objPHPExcel->getActiveSheet()->getCell('I'.$i)->getCalculatedValue();
                 $ex_dtpcatalogo = $objPHPExcel->getActiveSheet()->getCell('J'.$i)->getCalculatedValue();
@@ -88,12 +94,15 @@ class MetCargaArchivosMLCompetenciaController extends Controller
                 $ex_dtprepublicada = $objPHPExcel->getActiveSheet()->getCell('Q'.$i)->getCalculatedValue();
                 $ex_dtpcondicion = $objPHPExcel->getActiveSheet()->getCell('R'.$i)->getCalculatedValue();
                 $ex_dtpstock = $objPHPExcel->getActiveSheet()->getCell('S'.$i)->getCalculatedValue();
+                $decuentoproducto = 0;
+                $ofertaproducto = "¡Sin Oferta!";
 
                 $fecid = $ETLController->validarDataPorFecha($pagId);
 
                 $dtpdatospaginas = new dtpdatospaginas();
                 $dtpdatospaginas->fecid                   = $fecid;
                 $dtpdatospaginas->pagid                   = $pagId;
+                $dtpdatospaginas->pagidexcel              = $pagidexcel;
                 $dtpdatospaginas->tpmid                   = $tpmid;
                 $dtpdatospaginas->dtpidproducto           = $ex_dtpidproducto;
                 $dtpdatospaginas->dtpnombre               = $ex_dtpnombre;
@@ -103,7 +112,10 @@ class MetCargaArchivosMLCompetenciaController extends Controller
                 $dtpdatospaginas->dtpventaenpesoschilenos = $ex_dtpventaenpesoschilenos;
                 $dtpdatospaginas->dtpventaenunid          = $ex_dtpventaenunid;
                 $dtpdatospaginas->dtppromediodeventas     = $ex_dtppromediodeventas;
-                $dtpdatospaginas->dtpprecio               = $ex_dtpprecio;
+                $dtpdatospaginas->dtpprecioreal           = $precioPlano;
+                $dtpdatospaginas->dtpprecioactual         = $precioPlano;
+                $dtpdatospaginas->dtpdescuento            = $decuentoproducto;
+                $dtpdatospaginas->dtpmecanica             = $ofertaproducto;
                 $dtpdatospaginas->dtppreciopromedio       = $ex_dtppreciopromedio;
                 $dtpdatospaginas->dtpfulfillment          = $ex_dtpfulfillment;
                 $dtpdatospaginas->dtpcatalogo             = $ex_dtpcatalogo;

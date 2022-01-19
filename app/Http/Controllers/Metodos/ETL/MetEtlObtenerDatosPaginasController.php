@@ -11,7 +11,7 @@ use Goutte\Client;
 
 class MetEtlObtenerDatosPaginasController extends Controller
 {
-       public function validarDataPorFecha($pagid=0, $eliminarData=false, $mercadolibre=false)
+    public function validarDataPorFecha($pagid=0, $eliminarData=false, $mercadolibre=false)
     {
         date_default_timezone_set("America/Lima");
         $fecfechaDate = new DateTime();
@@ -281,6 +281,17 @@ class MetEtlObtenerDatosPaginasController extends Controller
         }
     }
     
+    public function obtenerPrecioPlano($precio)
+    {
+        if (stristr($precio,'.')) {
+            $precioPlano = str_replace(array("."), '', $precio);
+        }else if (stristr($precio,',')) {
+            $precioPlano = str_replace(array(","), '.', $precio);
+        }else{
+            $precioPlano = $precio;
+        }
+        return $precioPlano;
+    }
     public function MetObtenerArcalauquen(Client $client)
     {
         $pagId = 1;
@@ -361,21 +372,23 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $precioProducto = $node->filter("[class='product-price-and-shipping']")->text();
                         $precioString = explode("$",$precioProducto);
                         $precioStringFinal = trim($precioString[0]);
+                        $precioPlano = $this->obtenerPrecioPlano($precioStringFinal);
                         $urlProducto = $node->filter("[class='thumbnail product-thumbnail']")->attr('href');
                         $descProducto = $node->filter(".product-description-short")->text();
                         $stockProducto = $node->filter("[class='product-availability d-block']")->text();
                         $skuProducto = $node->filter("[class='product-reference text-muted']")->text();
                         $ofertaProducto = $node->filter("[class='product-flag on-sale']")->text('¡Sin Oferta!');
                         
+                        
                         $fecid = $this->validarDataPorFecha(1);
-
+                    
                         $dtpdatospaginas = new dtpdatospaginas();
                         $dtpdatospaginas->fecid           = $fecid;
                         $dtpdatospaginas->pagid           = $pagId;
                         $dtpdatospaginas->tpmid           = $tpmid;
                         $dtpdatospaginas->dtpnombre       = $nombreProducto;
-                        $dtpdatospaginas->dtpprecioreal   = $precioStringFinal;
-                        $dtpdatospaginas->dtpprecioactual = $precioStringFinal;
+                        $dtpdatospaginas->dtpprecioreal   = $precioPlano;
+                        $dtpdatospaginas->dtpprecioactual = $precioPlano;
                         $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
                         $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                         $dtpdatospaginas->dtpurl          = $urlProducto;
@@ -400,12 +413,12 @@ class MetEtlObtenerDatosPaginasController extends Controller
 
     public function MetObtenerTork(Client $client)
     {
-        $pagId = 2;
-        $tpmid = 1;
-        $dtpsigv = true;
-        $ofertaProducto = "¡Sin Oferta!";
+        $pagId             = 2;
+        $tpmid             = 1;
+        $dtpsigv           = true;
+        $ofertaProducto    = "¡Sin Oferta!";
         $descuentoProducto = 0;
-        $categoriasLink = array(
+        $categoriasLink    = array(
             (object)
             [
                 'linkCategoriaProducto' => 'https://torkalpormayor.cl/collections/papel-higienico',
@@ -459,6 +472,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $precioProducto = $node->filter("[class='money']")->text();
                     $precioString = explode("$",$precioProducto);
                     $precioStringFinal = trim($precioString[1]);
+                    $precioPlano = $this->obtenerPrecioPlano($precioStringFinal);
                     $urlProducto = $node->filter(".lazy-image")->attr('href');
                     $urlProductoConcatenado = "https://torkalpormayor.cl$urlProducto";
                     $stockProducto = $node->filter("[class='sticker sticker--sold']")->text('En stock');
@@ -470,8 +484,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas->fecid           = $fecid;
                     $dtpdatospaginas->tpmid           = $tpmid; 
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
-                    $dtpdatospaginas->dtpprecioactual = $precioStringFinal;
-                    $dtpdatospaginas->dtpprecioreal   = $precioStringFinal;
+                    $dtpdatospaginas->dtpprecioactual = $precioPlano;
+                    $dtpdatospaginas->dtpprecioreal   = $precioPlano;
                     $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
                     $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
@@ -538,6 +552,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $precioString = explode("$",$precioProducto[1]);
                     $precioString2 = explode("+", $precioString[1]);
                     $precioStringFinal = trim($precioString2[0]);
+                    $precioPlano = $this->obtenerPrecioPlano($precioStringFinal);
                     $marcaProducto = $node->filter(".box-contenido > h4")->text();
                     $skuProducto = $node->filter("p > span")->text();
                     $nombreCompleto = $marcaProducto .' '. $nombreProducto[0];
@@ -555,8 +570,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                     $dtpdatospaginas->dtpmarca        = $marcaProducto;
                     $dtpdatospaginas->dtpsku          = $skuProducto;
-                    $dtpdatospaginas->dtpprecioreal   = $precioStringFinal;
-                    $dtpdatospaginas->dtpprecioactual = $precioStringFinal;
+                    $dtpdatospaginas->dtpprecioreal   = $precioPlano;
+                    $dtpdatospaginas->dtpprecioactual = $precioPlano;
                     $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
                     $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                     $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;  
@@ -693,9 +708,11 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $precioActualProducto = $node->filter("[class='price product-price']")->text();
                         $precioString = explode("$",$precioActualProducto);
                         $precioStringFinal = trim($precioString[0]);
+                        $precioActualPlano = $this->obtenerPrecioPlano($precioStringFinal);
                         $precioRegularProducto = $node->filter("[class='regular-price']")->text($precioStringFinal);
                         $precioregularString = explode("$",$precioRegularProducto);
                         $precioregularStringFinal = trim($precioregularString[0]);
+                        $precioRealPlano = $this->obtenerPrecioPlano($precioregularStringFinal);
                         $urlProducto = $node->filter(".product-name > a")->attr('href');
                         $stringSkuProducto = $node->filter(".second-block > h4")->text();
                         $skuProducto = explode ("Ref:", $stringSkuProducto);
@@ -714,8 +731,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->dtpimagen       = $imagenProducto;
                         $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                         $dtpdatospaginas->dtpurl          = $urlProducto;
-                        $dtpdatospaginas->dtpprecioactual = $precioStringFinal;
-                        $dtpdatospaginas->dtpprecioreal   = $precioregularStringFinal;
+                        $dtpdatospaginas->dtpprecioactual = $precioActualPlano;
+                        $dtpdatospaginas->dtpprecioreal   = $precioRealPlano;
                         $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                         $dtpdatospaginas->dtppagina       = $pagina;
                         $dtpdatospaginas->dtpstock        = $stockProducto;
@@ -883,6 +900,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $precioProducto = $node->filter("[class='woocommerce-Price-amount amount']")->text();
                     $precioString = explode("$",$precioProducto);
                     $precioStringFinal = trim($precioString[1]);
+                    $precioPlano = $this->obtenerPrecioPlano($precioStringFinal);
                     $stockProducto = $node->filter(".soldout")->text("Stock");
 
                     $fecid = $this->validarDataPorFecha(5);
@@ -894,8 +912,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
                     $dtpdatospaginas->dtpurl          = $urlProducto;
                     $dtpdatospaginas->dtpimagen       = $imagenProducto;
-                    $dtpdatospaginas->dtpprecioactual = $precioStringFinal;
-                    $dtpdatospaginas->dtpprecioreal   = $precioStringFinal;
+                    $dtpdatospaginas->dtpprecioactual = $precioPlano;
+                    $dtpdatospaginas->dtpprecioreal   = $precioPlano;
                     $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                     $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
@@ -1120,12 +1138,15 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $precioProducto = $node->filter("[class='woocommerce-Price-amount amount']")->text();
                     $preciorealString = explode("$",$precioProducto);
                     $preciorealStringFinal = trim($preciorealString[1]);
-                    $precioactualProducto = $node->filter("[class='woocommerce-Price-amount amount']")->last()->text($preciorealStringFinal);
+                    $precioRealPlano = $this->obtenerPrecioPlano($preciorealStringFinal);
+                    $precioactualProducto = $node->filter("[class='woocommerce-Price-amount amount']")->last()->text($precioRealPlano);
                     $precioactualString = explode("$",$precioactualProducto);
                     $precioactualStringFinal = trim($precioactualString[1]);
+                    $precioActualPlano = $this->obtenerPrecioPlano($precioactualStringFinal);
+
                     $stockProducto = $node->filter("[class='out-of-stock-label']")->text("Stock");
-                    if ($precioactualStringFinal <= $preciorealStringFinal) {
-                        $descuentoProducto = $preciorealStringFinal - $precioactualStringFinal;
+                    if ($precioActualPlano <= $precioRealPlano) {
+                        $descuentoProducto = $precioRealPlano - $precioActualPlano;
                     }
                     if ($descuentoProducto > 0) {
                         $ofertaProducto = "¡Con Oferta!";
@@ -1142,8 +1163,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
                     $dtpdatospaginas->dtpurl          = $urlProducto;
                     $dtpdatospaginas->dtpimagen       = $imagenProducto;
-                    $dtpdatospaginas->dtpprecioreal   = $preciorealStringFinal;
-                    $dtpdatospaginas->dtpprecioactual = $precioactualStringFinal;
+                    $dtpdatospaginas->dtpprecioreal   = $precioRealPlano;
+                    $dtpdatospaginas->dtpprecioactual = $precioActualPlano;
                     $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
                     $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
@@ -1234,13 +1255,15 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $preciorealProducto = $node->filter("[class='woocommerce-Price-amount amount']")->first()->text();
                     $preciorealString = explode("$",$preciorealProducto);
                     $preciorealStringFinal = trim($preciorealString[1]);
-                    $preciorealStringFinalSinPunto = str_replace(array("."), '', $preciorealStringFinal);
-                    $precioactualProducto = $node->filter("[class='woocommerce-Price-amount amount']")->last()->text($preciorealStringFinal);
+                    $precioRealPlano = $this->obtenerPrecioPlano($preciorealStringFinal);
+                    // $preciorealStringFinalSinPunto = str_replace(array("."), '', $preciorealStringFinal);
+                    $precioactualProducto = $node->filter("[class='woocommerce-Price-amount amount']")->last()->text($precioRealPlano);
                     $precioactualString = explode("$",$precioactualProducto);
                     $precioactualStringFinal = trim($precioactualString[1]);
-                    $precioactualStringFinalSinPunto = str_replace(array("."), '', $precioactualStringFinal);
-                    if ($precioactualStringFinalSinPunto <= $preciorealStringFinalSinPunto) {
-                        $descuentoProducto = $preciorealStringFinalSinPunto - $precioactualStringFinalSinPunto;
+                    $precioActualPlano = $this->obtenerPrecioPlano($precioactualStringFinal);
+                    // $precioactualStringFinalSinPunto = str_replace(array("."), '', $precioactualStringFinal);
+                    if ($precioActualPlano <= $precioRealPlano) {
+                        $descuentoProducto = $precioRealPlano - $precioActualPlano;
                     }
                     if ($descuentoProducto > 0) {
                         $ofertaProducto = "¡Con Oferta!";
@@ -1257,8 +1280,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
                     $dtpdatospaginas->dtpurl          = $urlProducto;
                     $dtpdatospaginas->dtpimagen       = $imagenProducto;
-                    $dtpdatospaginas->dtpprecioreal   = $preciorealStringFinalSinPunto;
-                    $dtpdatospaginas->dtpprecioactual = $precioactualStringFinalSinPunto;
+                    $dtpdatospaginas->dtpprecioreal   = $precioRealPlano;
+                    $dtpdatospaginas->dtpprecioactual = $precioActualPlano;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                     $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
                     $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
@@ -1400,6 +1423,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $precioString = explode("$",$precioProducto);
                         $precioString2 = explode("CLP",$precioString[1]);
                         $precioStringFinal = trim($precioString2[0]);
+                        $precioPlano = $this->obtenerPrecioPlano($precioStringFinal);
                         $marcaProducto = $node->filter("[class='brand']")->text('-');
 
                         $fecid = $this->validarDataPorFecha(9);
@@ -1411,8 +1435,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->dtpnombre       = $nombreProducto;
                         $dtpdatospaginas->dtpurl          = $urlProductoConcatenado;
                         $dtpdatospaginas->dtpimagen       = $imagenProducto;
-                        $dtpdatospaginas->dtpprecioreal   = $precioStringFinal;
-                        $dtpdatospaginas->dtpprecioactual = $precioStringFinal;
+                        $dtpdatospaginas->dtpprecioreal   = $precioPlano;
+                        $dtpdatospaginas->dtpprecioactual = $precioPlano;
                         $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
                         $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                         $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
@@ -1508,10 +1532,11 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $preciorealProducto = $node->filter("[class='price']")->text();
                         $preciorealString = explode("$",$preciorealProducto);
                         $preciorealStringFinal = trim($preciorealString[1]);
+                        $precioPlano = $this->obtenerPrecioPlano($preciorealStringFinal);
 
                         $fecid = $this->validarDataPorFecha(10);
 
-                        if ($preciorealStringFinal > 0) {
+                        if ($precioPlano > 0) {
                             $dtpdatospaginas = new dtpdatospaginas();
                             $dtpdatospaginas->pagid           = $pagId;
                             $dtpdatospaginas->fecid           = $fecid;
@@ -1519,8 +1544,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
                             $dtpdatospaginas->dtpnombre       = $nombreProducto;
                             $dtpdatospaginas->dtpurl          = $urlProducto;
                             $dtpdatospaginas->dtpimagen       = $imagenProducto;
-                            $dtpdatospaginas->dtpprecioreal   = $preciorealStringFinal;
-                            $dtpdatospaginas->dtpprecioactual = $preciorealStringFinal;
+                            $dtpdatospaginas->dtpprecioreal   = $precioPlano;
+                            $dtpdatospaginas->dtpprecioactual = $precioPlano;
                             $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
                             $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                             $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
@@ -1640,21 +1665,19 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $precioactualProducto = $node->filter("[class='conDescuento']")->text();
                         $precioactualString = explode("$",$precioactualProducto);
                         $precioactualStringFinal = trim($precioactualString[1]);
+                        $precioActualPlano = $this->obtenerPrecioPlano($precioactualStringFinal);
 
-                        $preciorealProducto = $node->filter(".valorGrilla > .antes")->text($precioactualStringFinal);
-                        // if ($nombreProducto == 'PAPEL HIGIENICO TORK SMARTONE MINI 12 ROLLOS DE 111 MTS') {
-                        //     dd(strlen(trim($preciorealProducto)),$preciorealProducto );
-                        // }
+                        $preciorealProducto = $node->filter(".valorGrilla > .antes")->text($precioActualPlano);
                        if (strlen($preciorealProducto) > 8) {
                             $preciorealString = explode("$",$preciorealProducto);
                             $preciorealStringFinal = trim($preciorealString[1]);
-                            
+                            $precioRealPlano = $this->obtenerPrecioPlano($preciorealStringFinal);
                        }else{
-                            $preciorealStringFinal = $precioactualStringFinal;
+                            $precioRealPlano = $precioActualPlano;
                        }
                         
-                        if ($precioactualStringFinal < $preciorealStringFinal) {
-                            $descuentoProducto = $preciorealStringFinal - $precioactualStringFinal;
+                        if ($precioRealPlano > $precioActualPlano) {
+                            $descuentoProducto = $precioRealPlano - $precioActualPlano;
                         }else{
                             $descuentoProducto = 0;
                         }
@@ -1667,7 +1690,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
 
                         $fecid = $this->validarDataPorFecha(11);
                         
-                        if ($preciorealStringFinal > 0) {
+                        if ($precioRealPlano > 0) {
                             $dtpdatospaginas = new dtpdatospaginas();
                             $dtpdatospaginas->pagid           = $pagId;
                             $dtpdatospaginas->fecid           = $fecid;
@@ -1675,8 +1698,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
                             $dtpdatospaginas->dtpnombre       = $nombreProducto;
                             $dtpdatospaginas->dtpurl          = $urlProductoConcatenado;
                             $dtpdatospaginas->dtpimagen       = $imagenProductoConcatenado;
-                            $dtpdatospaginas->dtpprecioreal   = $preciorealStringFinal;
-                            $dtpdatospaginas->dtpprecioactual = $precioactualStringFinal;
+                            $dtpdatospaginas->dtpprecioreal   = $precioRealPlano;
+                            $dtpdatospaginas->dtpprecioactual = $precioActualPlano;
                             $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                             $dtpdatospaginas->dtppagina       = $pagina;
                             $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida;
@@ -1766,9 +1789,9 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $precioProducto = $node->filter("[class='price-tag-amount']")->text();
                     $precioString = explode("$",$precioProducto);
                     $precioStringFinal = trim($precioString[1]);
+                    $precioPlano = $this->obtenerPrecioPlano($precioStringFinal);
                     $envioGratisProducto = $node->filter("[class='ui-search-item__shipping ui-search-item__shipping--free']")->text("Sin envío");
 
-                    $proid = $this->obtenerProId($nombreProducto, $precioStringFinal, $precioStringFinal, $imagenProducto);
                     $fecid = $this->validarDataPorFecha(12);
 
                     $dtpdatospaginas = new dtpdatospaginas();
@@ -1778,8 +1801,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
                     $dtpdatospaginas->dtpurl          = $urlProducto;
                     $dtpdatospaginas->dtpimagen       = $imagenProducto;
-                    $dtpdatospaginas->dtpprecioreal   = $precioStringFinal;
-                    $dtpdatospaginas->dtpprecioactual = $precioStringFinal;
+                    $dtpdatospaginas->dtpprecioreal   = $precioPlano;
+                    $dtpdatospaginas->dtpprecioactual = $precioPlano;
                     $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
                     $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
@@ -1949,23 +1972,29 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $preciorealProducto = $node->filter("[class='price']")->text();
                         $preciorealString = explode("+ IVA",$preciorealProducto);
                         $preciorealStringFinal = str_replace(array("$"), '', $preciorealString[0]);
-                        $precioactualStringFinal = $preciorealStringFinal;
+                        $precioRealPlano = $this->obtenerPrecioPlano($preciorealStringFinal);
+                        $precioActualPlano = $precioRealPlano;
                     }else{ //no tendra un rango y sera precio unico teniendo en cuenta que pueda estar en oferta
                         $preciorealProducto = $node->filter("[class='woocommerce-Price-amount amount']")->first()->text();
                         $precioactualProducto = $node->filter("[class='woocommerce-Price-amount amount']")->last()->text($preciorealProducto);
                         $precioactualStringFinal = str_replace(array("$"), '', $precioactualProducto);
+                        $precioActualPlano = $this->obtenerPrecioPlano($precioactualStringFinal);
+                        
 
                         if ( strpos($preciorealProducto,"–")) {
                             $preciorealString = explode("+ IVA",$preciorealProducto);
                             $preciorealStringFinal = str_replace(array("$"), '', $preciorealString[0]);
+                            $precioRealPlano = $this->obtenerPrecioPlano($preciorealStringFinal);
                         }else{
                             $precioString = explode("+ IVA",$preciorealProducto);
                             $preciorealStringFinal = str_replace(array("$"), '', $precioString[0]);
+                            $precioRealPlano = $this->obtenerPrecioPlano($preciorealStringFinal);
+
                         }
                     }
                                         
-                    if ($preciorealStringFinal > $precioactualStringFinal) {
-                        $descuentoProducto = (float)$preciorealStringFinal - (float)$precioactualStringFinal;
+                    if ($precioRealPlano > $precioActualPlano) {
+                        $descuentoProducto = (float)$precioRealPlano - (float)$precioActualPlano;
                     }else{
                         $descuentoProducto = 0;
                     }
@@ -1982,8 +2011,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $dtpdatospaginas->dtpnombre       = $nombreProducto;
                     $dtpdatospaginas->dtpurl          = $urlProducto;
                     $dtpdatospaginas->dtpimagen       = $imagenProducto;
-                    $dtpdatospaginas->dtpprecioactual = $precioactualStringFinal;
-                    $dtpdatospaginas->dtpprecioreal   = $preciorealStringFinal;
+                    $dtpdatospaginas->dtpprecioactual = $precioActualPlano;
+                    $dtpdatospaginas->dtpprecioreal   = $precioRealPlano;
                     $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
                     $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                     $dtpdatospaginas->dtpunidadmedida = $dtpunidadmedida; 
@@ -2092,13 +2121,15 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     {
                         $fecid = $this->validarDataPorFecha(14);
                         $dtpunidadmedida = $this->obtenerUnidadMedida($producto->name);
-                        if ($producto->specialPrice == 0) {
-                            $precioActual = $producto->price;
+                        $precioRealPlano = $this->obtenerPrecioPlano($producto->price);
+                        $precioActualPlano = $this->obtenerPrecioPlano($producto->specialPrice);
+                        if ($precioActualPlano == 0) {
+                            $precioActual = $precioRealPlano;
                         }else{
-                            $precioActual = $producto->specialPrice;
+                            $precioActual = $precioActualPlano;
                         }
-                        if ($producto->price > $precioActual) {
-                            $descuentoProducto = $producto->price - $precioActual;
+                        if ($precioRealPlano > $precioActual) {
+                            $descuentoProducto = $precioRealPlano - $precioActual;
                         }else{
                             $descuentoProducto = 0;
                         }
@@ -2117,7 +2148,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->dtpnombre       = $producto->name;
                         $dtpdatospaginas->dtppagina       = $pagina;
                         $dtpdatospaginas->dtpimagen       = $producto->photosUrls[0];
-                        $dtpdatospaginas->dtpprecioreal   = $producto->price;
+                        $dtpdatospaginas->dtpprecioreal   = $precioRealPlano;
                         $dtpdatospaginas->dtpprecioactual = $precioActual;
                         $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
                         $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
@@ -2214,12 +2245,14 @@ class MetEtlObtenerDatosPaginasController extends Controller
                                 $fecid = $this->validarDataPorFecha(15);
                            
                                 $preciorealStringFinal = str_replace(array("$"), '', $productosSubcategoria->valor_original);
+                                $precioRealPlano = $this->obtenerPrecioPlano($preciorealStringFinal);
                                 $precioactualStringFinal = str_replace(array("$"), '', $productosSubcategoria->valor_oferta);
-                                if ($preciorealStringFinal == null) {
-                                    $preciorealStringFinal = $precioactualStringFinal;
+                                $precioActualPlano = $this->obtenerPrecioPlano($precioactualStringFinal);
+                                if ($precioRealPlano == null) {
+                                    $precioRealPlano = $precioActualPlano;
                                 }
-                                if ($precioactualStringFinal < $preciorealStringFinal) {
-                                    $descuentoProducto = (float)$preciorealStringFinal - (float)$precioactualStringFinal;
+                                if ($precioActualPlano < $precioRealPlano) {
+                                    $descuentoProducto = (float)$precioRealPlano - (float)$precioActualPlano;
                                 }else{
                                     $descuentoProducto = 0;
                                 }
@@ -2229,8 +2262,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                                     $ofertaProducto = "¡Sin Oferta!";
                                 }
                                 $dtpunidadmedida = $this->obtenerUnidadMedida($productosSubcategoria->titulo);
-                                $proid = $this->obtenerProId($productosSubcategoria->titulo, $precioactualStringFinal, $preciorealStringFinal, $productosSubcategoria->imagen);
-
+                                
                                 $dtpdatospaginas = new dtpdatospaginas();
                                 $dtpdatospaginas->pagid           = $pagId;
                                 $dtpdatospaginas->fecid           = $fecid;
@@ -2238,8 +2270,8 @@ class MetEtlObtenerDatosPaginasController extends Controller
                                 $dtpdatospaginas->dtpnombre       = $productosSubcategoria->titulo;
                                 $dtpdatospaginas->dtppagina       = $numeroPaginas;
                                 $dtpdatospaginas->dtpimagen       = $productosSubcategoria->imagen;
-                                $dtpdatospaginas->dtpprecioactual = $precioactualStringFinal;
-                                $dtpdatospaginas->dtpprecioreal   = $preciorealStringFinal;
+                                $dtpdatospaginas->dtpprecioactual = $precioActualPlano;
+                                $dtpdatospaginas->dtpprecioreal   = $precioRealPlano;
                                 $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
                                 $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                                 $dtpdatospaginas->dtpcategoria    = $categoria;
