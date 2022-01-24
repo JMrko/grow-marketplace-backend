@@ -23,6 +23,7 @@ class MetAsignarProductoDeCompetenciaController extends Controller
         $mensaje   =  '';
 
         $dtp = dtpdatospaginas::join('pagpaginas as pag','pag.pagid','dtpdatospaginas.pagid')
+                            // ->where('dtpnombre', 'like', '%elite%')
                             ->where(function ($query) use($pagsId) {
                                 if($pagsId == null){
                                     $pagsId = [];
@@ -251,6 +252,7 @@ class MetAsignarProductoDeCompetenciaController extends Controller
                             ->where('dtpid', $dtpid)
                             ->first([
                                 'pronombre',
+                                'dtpnombre',
                                 'dtpimagen',
                                 'dtpdesclarga',
                                 'proprecio'
