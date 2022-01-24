@@ -546,18 +546,29 @@ class MetEtlObtenerDatosPaginasController extends Controller
 
                 $crawler->filter("[class='col-md-4 mb50']")->each(function($node) use($tituloCategoria, $pagId, $tpmid, $paginaURL, $descuentoProducto, $ofertaProducto,$palabraclave){
                     $imagenProducto = $node->filter(".box-contenido > img")->attr('src');
-                    $nombrePrecioProducto = $node->filter("h5")->text();
-                    $nombreProducto = explode ("Un.", $nombrePrecioProducto);
-                    $precioProducto = explode("Precio:", $nombrePrecioProducto);
-                    $precioString = explode("$",$precioProducto[1]);
-                    $precioString2 = explode("+", $precioString[1]);
-                    $precioStringFinal = trim($precioString2[0]);
-                    $precioPlano = $this->obtenerPrecioPlano($precioStringFinal);
+                    $nombrePrecioProducto = $node->filter("h5")->text('0');
+                    // dd($nombrePrecioProducto);
+                    if ($nombrePrecioProducto !== '') {
+                        $nombreProducto = explode ("Un.", $nombrePrecioProducto);
+                        $precioProducto = explode("Precio:", $nombrePrecioProducto);
+                        $precioString = explode("$",$precioProducto[1]);
+                        $precioString2 = explode("+", $precioString[1]);
+                        $precioStringFinal = trim($precioString2[0]);
+                        $precioPlano = $this->obtenerPrecioPlano($precioStringFinal);
+                    }else{
+                        $precioPlano = '';
+                        $nombreProducto = '';
+                    }
                     $marcaProducto = $node->filter(".box-contenido > h4")->text();
                     $skuProducto = $node->filter("p > span")->text();
-                    $nombreCompleto = $marcaProducto .' '. $nombreProducto[0];
+                    if ($nombrePrecioProducto !== '') {
+                        $nombreCompleto = $marcaProducto .' '. $nombreProducto[0];
+                        $igvProducto = stristr($precioProducto[1],'IVA') ? true : false;
+                    }else{
+                        $nombreCompleto = '';
+                        $igvProducto = false;
+                    }
                     $dtpunidadmedida = $this->obtenerUnidadMedida($nombreCompleto);
-                    $igvProducto = stristr($precioProducto[1],'IVA') ? true : false;
 
                     $fecid = $this->validarDataPorFecha(3);
 
