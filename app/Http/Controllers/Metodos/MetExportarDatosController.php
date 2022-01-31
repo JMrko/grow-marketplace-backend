@@ -1927,6 +1927,9 @@ class MetExportarDatosController extends Controller
                 $nuevoArray[0]['data'][] = $arrayFilaExcel;
             }
 
+            $fechaActual = strtotime($fechaActual);
+            $fechaFormato = date("d-m-Y", $fechaActual);
+
             $arrayFilaExcel = array(
                 array(
                     "value" => $dtp->dtpid,
@@ -1989,7 +1992,7 @@ class MetExportarDatosController extends Controller
                     )
                 ),
                 array(
-                    "value" => $fechaActual,
+                    "value" => $fechaFormato,
                     "style" => array(
                         "font" => array(
                             "sz" => "9",
