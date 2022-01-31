@@ -88,3 +88,6 @@ $router->get('/generar-excel','Metodos\ExportacionArchivos\MetGenerarExcelContro
 $router->post('/crear-favorito','Validaciones\Favoritos\ValFavoritosController@ValCrearFavoritos');
 $router->delete('/eliminar-favorito/{favid}','Validaciones\Favoritos\ValFavoritosController@ValEliminarFavoritos');
 
+
+
+$router->get('/obtener-link-excel-descargar-todo','Metodos\SalvacionController@Salvacion');
