@@ -11,7 +11,7 @@ class SalvacionController extends Controller
     {
 
         return response()->json([
-            'link' => "https://pricing-backend.softys-leadcorporate.com/Excels/MarketPlaces-F30902022XA.xlsx"
+            'link' => "https://pricing-backend.softys-leadcorporate.com/Excels/MarketPlaces-F311002022XA.xlsx"
         ]);
 
     }
