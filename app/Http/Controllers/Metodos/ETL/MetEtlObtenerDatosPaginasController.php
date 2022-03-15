@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Metodos\ETL;
 
 use App\Http\Controllers\Controller;
 use App\Models\dtpdatospaginas;
+use App\Models\pagpaginas;
 use App\Models\fecfechas;
 use App\Models\pdpproductosdatospaginas;
 use DateTime;
@@ -292,6 +293,48 @@ class MetEtlObtenerDatosPaginasController extends Controller
         }
         return $precioPlano;
     }
+
+    public function MetAlertasPaginas()
+    {
+        $arrayPaginas = array();
+        date_default_timezone_set("America/Lima");
+        $fecfechaDate = new DateTime();
+        $anioActual = date('Y');
+        $mesActual = date('m');
+        $diaActual = date('d');
+
+        $fecfecha = fecfechas::where('fecanionumero',$anioActual)
+                                ->where('fecmesnumero',$mesActual)
+                                ->where('fecdianumero',$diaActual)
+                                ->first(['fecid']);
+        
+        $fecid = $fecfecha->fecid;
+
+        $paginasFechaActual = dtpdatospaginas::join('pagpaginas as pag','pag.pagid','dtpdatospaginas.pagid')
+                                    ->where('fecid', $fecid)
+                                    ->distinct('pagid')
+                                    ->get(['dtpdatospaginas.pagid','pag.pagnombre']);
+        // dd($paginasFechaActual);
+        $paginas = pagpaginas::get(['pagid','pagnombre']);
+
+        foreach ($paginas as $key => $pagina) {
+            $pag = $pagina->pagnombre;
+            foreach ($paginasFechaActual as $paginaFA) {
+                if ($pag == $paginaFA->pagnombre) {
+                   unset($paginas[$key]);
+                }   
+            } 
+        }
+        
+        foreach ($paginas as $pag) {
+            $arrayPaginas[]['pagnombre'] = $pag->pagnombre;
+        }
+       
+        return response()->json([
+            'datos' => $arrayPaginas
+        ]);
+    }
+
     public function MetObtenerArcalauquen(Client $client)
     {
         $pagId = 1;
@@ -1044,14 +1087,21 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpunidadmedida = $this->obtenerUnidadMedida($nombreProducto);
                         $marcaProducto = $node->filter("[class='jsx-411745769 product-brand']")->text();
                         $urlProducto = $node->filter("[class='jsx-4282314783 link link-primary ']")->attr('href');
-                        $precioProducto = $node->filter("[class='jsx-4135487716']")->text();
-                        $precioString = explode("$",$precioProducto);
-                        $precioStringFinal = trim($precioString[1]);
+                        $precioActualProducto = $node->filter("[class='jsx-4135487716']")->first()->text();
+                        $precioActualString = explode("$",$precioActualProducto);
+                        $precioActualStringFinal = trim($precioActualString[1]);
+                        $precioRealProducto = $node->filter("[class='jsx-4135487716']")->last()->text("0");
+                        $precioRealString = explode("$",$precioRealProducto);
+                        $precioRealStringFinal = trim($precioRealString[1]);
                         $stockProducto = $node->filter("[class='jsx-2799553099 withdrawl-info']")->text();
                         $envioProducto = $node->filter("[class='jsx-2799553099 dispatch-info']")->text();
                         $ofertaProducto = $node->filter("[class='jsx-585964327 main gridView CMR']")->text('Sin oferta');
                         $fecid = $this->validarDataPorFecha(6);
-
+                        if ($precioActualStringFinal < $precioRealStringFinal) {
+                            $descuentoProducto = $precioRealStringFinal - $precioActualStringFinal;
+                        }else{
+                            $descuentoProducto = '0';
+                        }
                         $dtpdatospaginas = new dtpdatospaginas();
                         $dtpdatospaginas->pagid           = $pagId;
                         $dtpdatospaginas->fecid           = $fecid;
@@ -1059,9 +1109,9 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->dtpnombre       = $nombreProducto;
                         $dtpdatospaginas->dtpurl          = $urlProducto;
                         $dtpdatospaginas->dtpimagen       = $imagenProducto;
-                        $dtpdatospaginas->dtpprecioactual = $precioStringFinal;
-                        $dtpdatospaginas->dtpprecioreal   = $precioStringFinal;
-                        // $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
+                        $dtpdatospaginas->dtpprecioactual = $precioActualStringFinal;
+                        $dtpdatospaginas->dtpprecioreal   = $precioRealStringFinal;
+                        $dtpdatospaginas->dtpdescuento    = $descuentoProducto;
                         $dtpdatospaginas->dtpcategoria    = $tituloCategoria;
                         $dtpdatospaginas->dtpmarca        = $marcaProducto;
                         $dtpdatospaginas->dtppagina       = $pagina;
@@ -1070,8 +1120,9 @@ class MetEtlObtenerDatosPaginasController extends Controller
                         $dtpdatospaginas->dtpmercadoenvio = $envioProducto;
                         $dtpdatospaginas->dtpmecanica     = $ofertaProducto;
                         $dtpdatospaginas->dtppalabraclave = $palabraclave;
-                        // $dtpdatospaginas->save();
-                        dd($dtpdatospaginas);
+                        if($dtpdatospaginas->save()){
+                            $this->obtenerProId($nombreProducto, null, $pagId, $dtpdatospaginas->id, $imagenProducto);
+                         }                       
                     });
                 }
             }

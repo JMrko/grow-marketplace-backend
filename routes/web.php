@@ -38,6 +38,7 @@ $router->get('/obtener-data-tork', 'Metodos\ETL\MetEtlObtenerDatosPaginasControl
 $router->get('/obtener-data-dipisa', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerDipisa');
 $router->get('/obtener-data-avalco', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerAvalco');
 $router->get('/obtener-data-dilen', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerDilen');
+$router->get('/obtener-data-sodimac', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerSodimac');
 $router->get('/obtener-data-dpronto', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerDpronto');
 $router->get('/obtener-data-comcer', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerComcer');
 $router->get('/obtener-data-ofimaster', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerOfimaster');
@@ -47,6 +48,7 @@ $router->get('/obtener-data-limpiamas', 'Metodos\ETL\MetEtlObtenerDatosPaginasCo
 $router->get('/obtener-data-hygiene', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerHygiene');
 $router->get('/obtener-data-mayorista', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerCentralMayorista');
 $router->get('/obtener-data-cuponatic', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetObtenerCuponatic');
+$router->get('/alertas-paginas', 'Metodos\ETL\MetEtlObtenerDatosPaginasController@MetAlertasPaginas');
 
 $router->get('/exportar-competencias/{id}', 'Validaciones\ValExportarDatosController@ValExportarCompetencias');
 $router->get('/exportar-usuarios/{id}', 'Validaciones\ValExportarDatosController@ValExportarUsuarios');
