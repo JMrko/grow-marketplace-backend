@@ -742,6 +742,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
 
                 $paginaURLPages = $categoriaLink->linkCategoriaProducto;
                 $palabraclave = $categoriaLink->palabraclave;
+                $categoria = $categoriaLink->categoria;
                 $crawler = $client->request('GET', $paginaURLPages);
                 $posicion = $crawler->filter(".page-list > li")->count()-2;
                 $numeroPaginas = $crawler->filter(".page-list > li")->eq($posicion)->text('1');
@@ -752,7 +753,7 @@ class MetEtlObtenerDatosPaginasController extends Controller
                     $stringSeleccionado = $nuevaURLPage[0];
                     $paginaURL = "$stringSeleccionado=$i";
                     $crawler = $client->request('GET', $paginaURL);
-                    $tituloCategoria = $crawler->filter("[class='page-heading js-category-page']")->first()->text();
+                    $tituloCategoria = $crawler->filter("[class='page-heading js-category-page']")->first()->text($categoria);
                     $pagina = $i;
                     
                     $crawler->filter("[class='product-miniature product-style js-product-miniature']")->each(function($node) use($tituloCategoria, $pagina, $pagId, $tpmid, $dtpsigv,$palabraclave){
